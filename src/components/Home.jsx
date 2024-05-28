@@ -26,6 +26,7 @@ function Home() {
 				<h1 className='text-2xl text-slate-50'>Bienvenue, {user}</h1>
 				<Logout />
 			</header>
+
 			<footer className='text-center text-gray-300 mt-4'>
 				<p>Family bank application - © {currentYear}</p>
 			</footer>
