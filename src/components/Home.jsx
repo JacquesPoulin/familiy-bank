@@ -45,12 +45,12 @@ function Home() {
 			notificationTimeout = setTimeout(() => {
 				console.log('Notification affichée');
 				setShowNotification(true);
-			}, 1 * 60 * 1000); // 1 minute avant déconnexion
+			}, 14 * 60 * 1000); // 1 minute avant déconnexion
 
 			inactivityTimeout = setTimeout(() => {
 				console.log('Déconnexion');
 				logoutAfterInactivity();
-			}, 2 * 60 * 1000); // 2 minutes d'inactivité
+			}, 15 * 60 * 1000); // 2 minutes d'inactivité
 		};
 
 		document.addEventListener('mousemove', resetInactivityTimer);
