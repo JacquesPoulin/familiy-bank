@@ -16,7 +16,7 @@ function Logout() {
 		<button
 			onClick={handleLogout}
 			className='px-4 py-2 font-medium text-white bg-red-500 rounded-md hover:bg-red-700 focus:ring-4 focus:ring-red-300'>
-			Logout
+			Se déconnecter
 		</button>
 	);
 }

@@ -4,6 +4,10 @@ import { signOut } from 'firebase/auth';
 import { auth } from '../utils/firebase.config';
 import Logout from './Logout';
 import Notification from './globals/Notification';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faWallet } from '@fortawesome/free-solid-svg-icons';
+import { faMoneyBillTrendUp } from '@fortawesome/free-solid-svg-icons';
+import { faArrowsRotate } from '@fortawesome/free-solid-svg-icons';
 
 function Home() {
 	const [userWelcome, setUserWelcome] = useState('');
@@ -77,41 +81,74 @@ function Home() {
 
 			<section className='bg-slate-800 p-6 rounded-lg shadow-md w-full max-w-6xl mx-auto mt-20'>
 				<h2 className='text-2xl text-slate-50 font-bold text-center mb-10 tracking-wide'>
-					Tableau de bord
+					- Tableau de bord -
 				</h2>
-				<div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-					<div className='flex flex-col justify-center items-center'>
-						<label className='text-slate-50 text-lg mb-2'>
-							Prime : XXXXXX €
-						</label>
-						<input
-							type='number'
-							value={prime}
-							onChange={(e) => setPrime(e.target.value)}
-							className='p-2 rounded bg-gray-700 text-white'
-						/>
-					</div>
-					<div className='flex flex-col justify-center items-center'>
-						<label className='text-slate-50 text-lg mb-2'>
-							Compte : XXXXXX €
-						</label>
-						<input
-							type='number'
-							value={compte}
-							onChange={(e) => setCompte(e.target.value)}
-							className='p-2 rounded bg-gray-700 text-white'
-						/>
-					</div>
-					<div className='flex flex-col justify-center items-center'>
-						<label className='text-slate-50 text-lg mb-2'>
-							Epargne : XXXXXX €
-						</label>
-						<input
-							type='number'
-							value={epargne}
-							onChange={(e) => setEpargne(e.target.value)}
-							className='p-2 rounded bg-gray-700 text-white'
-						/>
+				<div className='flex justify-around items-center'>
+					<div className='grid grid-cols-1 md:grid-cols-3 gap-20'>
+						{/* PRIME */}
+						<div className='flex flex-col items-start'>
+							<label className='text-slate-50 text-lg mb-2'>
+								Ma prime : XXX,XX
+							</label>
+							<div className='flex justify-center items-center'>
+								<input
+									type='number'
+									value={prime}
+									onChange={(e) => setPrime(e.target.value)}
+									className='p-2 rounded bg-gray-700 text-white'
+									title='Entrer la prime du mois'
+								/>
+								<button
+									type='button'
+									className='w-10 h-10 ml-5 text-lg text-center bg-slate-500 p-2 rounded text-slate-50 hover:bg-slate-600'
+									title='Ajouter une prime'>
+									<FontAwesomeIcon icon={faWallet} />{' '}
+									{/* Utilisation correcte de l'icône */}
+								</button>
+							</div>
+						</div>
+
+						{/* COMPTE */}
+						<div className='flex flex-col items-start'>
+							<label className='text-slate-50 text-lg mb-2'>
+								Mon compte : XXXX,XX
+							</label>
+							<div className='flex justify-center items-center'>
+								<input
+									type='number'
+									value={compte}
+									onChange={(e) => setCompte(e.target.value)}
+									className='p-2 rounded bg-gray-700 text-white'
+								/>
+								<button
+									type='button'
+									className='w-10 h-10 ml-5 text-lg text-center bg-slate-500 p-2 rounded text-slate-50 hover:bg-slate-600'
+									title='Actualiser le compte'>
+									<FontAwesomeIcon icon={faArrowsRotate} />
+								</button>
+							</div>
+						</div>
+
+						{/* ÉPARGNE */}
+						<div className='flex flex-col items-start'>
+							<label className='text-slate-50 text-lg mb-2'>
+								Mon épargne : XXXX,XX
+							</label>
+							<div className='flex justify-center items-center'>
+								<input
+									type='number'
+									value={epargne}
+									onChange={(e) => setEpargne(e.target.value)}
+									className='p-2 rounded bg-gray-700 text-white'
+								/>
+								<button
+									type='button'
+									className='w-10 h-10 ml-5 text-lg text-center bg-slate-500 p-2 rounded text-slate-50 hover:bg-slate-600'
+									title="Ajouter de l'épargne">
+									<FontAwesomeIcon icon={faMoneyBillTrendUp} />
+								</button>
+							</div>
+						</div>
 					</div>
 				</div>
 			</section>
