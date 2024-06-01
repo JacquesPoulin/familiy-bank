@@ -1,27 +1,54 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { signOut } from 'firebase/auth';
-import { auth } from '../utils/firebase.config';
+import { auth, db } from '../utils/firebase.config';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+
 import Logout from './Logout';
 import Notification from './globals/Notification';
+
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faWallet } from '@fortawesome/free-solid-svg-icons';
-import { faMoneyBillTrendUp } from '@fortawesome/free-solid-svg-icons';
-import { faArrowsRotate } from '@fortawesome/free-solid-svg-icons';
+import {
+	faWallet,
+	faMoneyBillTrendUp,
+	faArrowsRotate,
+} from '@fortawesome/free-solid-svg-icons';
+
+const months = [
+	'Janvier',
+	'Février',
+	'Mars',
+	'Avril',
+	'Mai',
+	'Juin',
+	'Juillet',
+	'Août',
+	'Septembre',
+	'Octobre',
+	'Novembre',
+	'Décembre',
+];
+
+const currentYear = new Date().getFullYear();
+const years = Array.from(
+	new Array(2),
+	(val, index) => new Date().getFullYear() - index
+);
 
 function Home() {
 	const [userWelcome, setUserWelcome] = useState('');
-	const [prime, setPrime] = useState(0);
-	const [compte, setCompte] = useState(0);
-	const [epargne, setEpargne] = useState(0);
+	const [prime, setPrime] = useState(null);
+	const [compte, setCompte] = useState(null);
+	const [epargne, setEpargne] = useState(null);
 	const [showNotification, setShowNotification] = useState(false);
+	const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+	const [selectedYear, setSelectedYear] = useState(currentYear);
 	const { currentUser } = useAuth();
-	const currentYear = new Date().getFullYear(); // Obtenir l'année actuelle
 
 	const logoutAfterInactivity = () => {
 		signOut(auth)
 			.then(() => {
-				console.log("Déconnexion automatique après 2 minutes d'inactivité");
+				console.log("Déconnexion automatique après 15 minutes d'inactivité");
 				// Rediriger ou afficher une notification de déconnexion
 			})
 			.catch((error) => {
@@ -71,6 +98,76 @@ function Home() {
 			clearTimeout(notificationTimeout);
 		};
 	}, []);
+	// ! SAUVEGARDER LES DATAS
+	const saveData = async () => {
+		if (!currentUser) return;
+		try {
+			const month = months[selectedMonth];
+			await setDoc(
+				doc(
+					db,
+					'users',
+					currentUser.uid,
+					'years',
+					String(selectedYear),
+					'months',
+					month
+				),
+				{
+					prime: parseFloat(prime),
+					compte: parseFloat(compte),
+					epargne: parseFloat(epargne),
+				}
+			);
+			console.log('Données sauvegardées !');
+		} catch (error) {
+			console.error('Erreur lors de la sauvegarde des données : ', error);
+		}
+	};
+
+	// ! RÉCUPÉRER LES DATAS
+	const loadData = async () => {
+		if (!currentUser) return;
+		const month = months[selectedMonth];
+		const docRef = doc(
+			db,
+			'users',
+			currentUser.uid,
+			'years',
+			String(selectedYear),
+			'months',
+			month
+		);
+		try {
+			const docSnap = await getDoc(docRef);
+
+			if (docSnap.exists()) {
+				const data = docSnap.data();
+				setPrime(data.prime);
+				setCompte(data.compte);
+				setEpargne(data.epargne);
+			} else {
+				console.log('Pas de données disponibles pour ce mois !');
+				setPrime(null);
+				setCompte(null);
+				setEpargne(null);
+			}
+		} catch (error) {
+			console.error('Erreur lors du chargement des données : ', error);
+		}
+	};
+
+	useEffect(() => {
+		if (currentUser) {
+			loadData();
+		}
+	}, [currentUser, selectedMonth, selectedYear]);
+
+	useEffect(() => {
+		if (currentUser && prime !== null && compte !== null && epargne !== null) {
+			saveData();
+		}
+	}, [prime, compte, epargne]);
 
 	return (
 		<div className='w-full min-h-screen flex flex-col bg-slate-900 p-4'>
@@ -79,7 +176,43 @@ function Home() {
 				<Logout />
 			</header>
 
-			<section className='bg-slate-800 p-6 rounded-lg shadow-md w-full max-w-6xl mx-auto mt-20'>
+			{/* ANNÉE */}
+			<nav className='w-full flex justify-center items-center mt-4'>
+				<div className='flex flex-wrap justify-center items-center gap-2'>
+					{years.map((year) => (
+						<button
+							key={year}
+							onClick={() => setSelectedYear(year)}
+							className={`px-4 py-2 mx-1 rounded ${
+								year === selectedYear
+									? 'bg-slate-600 text-white'
+									: 'bg-slate-400 text-slate-900'
+							}`}>
+							{year}
+						</button>
+					))}
+				</div>
+			</nav>
+
+			{/* MOIS DE L'ANNÉE */}
+			<nav className='w-full flex justify-center items-center mt-4'>
+				<div className='flex flex-wrap justify-center items-center gap-2'>
+					{months.map((month, index) => (
+						<button
+							key={index}
+							onClick={() => setSelectedMonth(index)}
+							className={`px-4 py-2 mx-1 rounded ${
+								index === selectedMonth
+									? 'bg-slate-600 text-white'
+									: 'bg-slate-400 text-slate-900'
+							}`}>
+							{month}
+						</button>
+					))}
+				</div>
+			</nav>
+
+			<section className='bg-slate-800 p-6 rounded-lg shadow-md w-full max-w-6xl mx-auto mt-10'>
 				<h2 className='text-2xl text-slate-50 font-bold text-center mb-10 tracking-wide'>
 					- Tableau de bord -
 				</h2>
@@ -88,65 +221,49 @@ function Home() {
 						{/* PRIME */}
 						<div className='flex flex-col items-start'>
 							<label className='text-slate-50 text-lg mb-2'>
-								Ma prime : XXX,XX
+								Ma prime :{' '}
+								{prime !== null ? parseFloat(prime).toFixed(2) : '-'}
 							</label>
 							<div className='flex justify-center items-center'>
 								<input
 									type='number'
-									value={prime}
-									onChange={(e) => setPrime(e.target.value)}
-									className='p-2 rounded bg-gray-700 text-white'
+									value={prime !== null ? prime : ''}
+									onChange={(e) => setPrime(parseFloat(e.target.value))}
+									className='w-30 p-2 rounded bg-gray-700 text-white'
 									title='Entrer la prime du mois'
 								/>
-								<button
-									type='button'
-									className='w-10 h-10 ml-5 text-lg text-center bg-slate-500 p-2 rounded text-slate-50 hover:bg-slate-600'
-									title='Ajouter une prime'>
-									<FontAwesomeIcon icon={faWallet} />{' '}
-									{/* Utilisation correcte de l'icône */}
-								</button>
 							</div>
 						</div>
 
 						{/* COMPTE */}
 						<div className='flex flex-col items-start'>
 							<label className='text-slate-50 text-lg mb-2'>
-								Mon compte : XXXX,XX
+								Mon compte :{' '}
+								{compte !== null ? parseFloat(compte).toFixed(2) : '-'}
 							</label>
 							<div className='flex justify-center items-center'>
 								<input
 									type='number'
-									value={compte}
-									onChange={(e) => setCompte(e.target.value)}
-									className='p-2 rounded bg-gray-700 text-white'
+									value={compte !== null ? compte : ''}
+									onChange={(e) => setCompte(parseFloat(e.target.value))}
+									className='w-30 p-2 rounded bg-gray-700 text-white'
 								/>
-								<button
-									type='button'
-									className='w-10 h-10 ml-5 text-lg text-center bg-slate-500 p-2 rounded text-slate-50 hover:bg-slate-600'
-									title='Actualiser le compte'>
-									<FontAwesomeIcon icon={faArrowsRotate} />
-								</button>
 							</div>
 						</div>
 
 						{/* ÉPARGNE */}
 						<div className='flex flex-col items-start'>
 							<label className='text-slate-50 text-lg mb-2'>
-								Mon épargne : XXXX,XX
+								Mon épargne :{' '}
+								{epargne !== null ? parseFloat(epargne).toFixed(2) : '-'}
 							</label>
 							<div className='flex justify-center items-center'>
 								<input
 									type='number'
-									value={epargne}
-									onChange={(e) => setEpargne(e.target.value)}
-									className='p-2 rounded bg-gray-700 text-white'
+									value={epargne !== null ? epargne : ''}
+									onChange={(e) => setEpargne(parseFloat(e.target.value))}
+									className='w-30 p-2 rounded bg-gray-700 text-white'
 								/>
-								<button
-									type='button'
-									className='w-10 h-10 ml-5 text-lg text-center bg-slate-500 p-2 rounded text-slate-50 hover:bg-slate-600'
-									title="Ajouter de l'épargne">
-									<FontAwesomeIcon icon={faMoneyBillTrendUp} />
-								</button>
 							</div>
 						</div>
 					</div>
