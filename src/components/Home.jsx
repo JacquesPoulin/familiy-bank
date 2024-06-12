@@ -6,64 +6,78 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 import Logout from './Logout';
 import Notification from './globals/Notification';
+import Header from './Header';
+import Navbar from './Navbar';
+import Dashboard from './Dashboard';
+import Entries from './Entries';
+import Imprevu from './Imprevu';
+import Courses from './Courses';
+import ComponentNavbar from './ComponentNavbar';
+import { months } from '../utils/mois';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
 	faWallet,
 	faMoneyBillTrendUp,
 	faArrowsRotate,
+	faCheck,
+	faPlus,
 } from '@fortawesome/free-solid-svg-icons';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-const months = [
-	'Janvier',
-	'Février',
-	'Mars',
-	'Avril',
-	'Mai',
-	'Juin',
-	'Juillet',
-	'Août',
-	'Septembre',
-	'Octobre',
-	'Novembre',
-	'Décembre',
-];
-
+// ! ****** VARIABLES ******
 const currentYear = new Date().getFullYear();
 const years = Array.from(
 	new Array(2),
 	(val, index) => new Date().getFullYear() - index
 );
+const budgetCourses = 560;
 
 function Home() {
 	const [userWelcome, setUserWelcome] = useState('');
 	const [prime, setPrime] = useState(null);
+	const [salaireJacques, setSalaireJacques] = useState(null);
+	const [salaireAstrid, setSalaireAstrid] = useState(null);
+	const [revenuCaf, setRevenuCaf] = useState(null);
 	const [compte, setCompte] = useState(null);
 	const [epargne, setEpargne] = useState(null);
 	const [showNotification, setShowNotification] = useState(false);
 	const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
 	const [selectedYear, setSelectedYear] = useState(currentYear);
 	const { currentUser } = useAuth();
+	const [courses, setCourses] = useState([]);
+	const [imprevus, setImprevus] = useState([]);
+	const [activeComponent, setActiveComponent] = useState('');
 
-	const logoutAfterInactivity = () => {
-		signOut(auth)
-			.then(() => {
-				console.log("Déconnexion automatique après 15 minutes d'inactivité");
-				// Rediriger ou afficher une notification de déconnexion
-			})
-			.catch((error) => {
-				console.error('Erreur lors de la déconnexion automatique : ', error);
-			});
-	};
+	// ? STATE TEMPORAIRE
+	const [tempPrime, setTempPrime] = useState('');
+	const [tempCompte, setTempCompte] = useState('');
+	const [tempEpargne, setTempEpargne] = useState('');
+	const [tempSalaireJacques, setTempSalaireJacques] = useState('');
+	const [tempSalaireAstrid, setTempSalaireAstrid] = useState('');
+	const [tempRevenuCaf, setTempRevenuCaf] = useState('');
 
+	// ! ****** HOOKS ******
+	// ! Gestion du message de bienvenue de l'utilisateur
 	useEffect(() => {
-		if (currentUser && currentUser.email === 'jacques.poulin64@gmail.com') {
-			setUserWelcome('Bienvenue, Jacques !');
+		const currentHour = new Date().getHours();
+		let greeting = '';
+
+		if (currentHour >= 19 || currentHour < 5) {
+			greeting = 'Bonsoir';
 		} else {
-			setUserWelcome('Bienvenue !');
+			greeting = 'Bonjour';
+		}
+
+		if (currentUser && currentUser.email === 'jacques.poulin64@gmail.com') {
+			setUserWelcome(`${greeting}, Jacques !`);
+		} else {
+			setUserWelcome(`${greeting} Famille PAC !`);
 		}
 	}, [currentUser]);
 
+	// ! Gestion de la déconnexion automatique (si l'utilisateur n'utilise pas sa souris)
 	useEffect(() => {
 		let inactivityTimeout;
 		let notificationTimeout;
@@ -74,14 +88,13 @@ function Home() {
 			setShowNotification(false);
 
 			notificationTimeout = setTimeout(() => {
-				console.log('Notification affichée');
 				setShowNotification(true);
-			}, 14 * 60 * 1000); // 1 minute avant déconnexion
+			}, 18 * 60 * 1000); // 2 minutes avant déconnexion
 
 			inactivityTimeout = setTimeout(() => {
 				console.log('Déconnexion');
 				logoutAfterInactivity();
-			}, 15 * 60 * 1000); // 2 minutes d'inactivité
+			}, 20 * 60 * 1000); // 20 minutes d'inactivité
 		};
 
 		document.addEventListener('mousemove', resetInactivityTimer);
@@ -98,7 +111,40 @@ function Home() {
 			clearTimeout(notificationTimeout);
 		};
 	}, []);
-	// ! SAUVEGARDER LES DATAS
+
+	useEffect(() => {
+		if (currentUser) {
+			loadData();
+		}
+	}, [currentUser, selectedMonth, selectedYear]);
+
+	useEffect(() => {
+		if (
+			currentUser &&
+			prime !== null &&
+			compte !== null &&
+			epargne !== null &&
+			salaireJacques !== null &&
+			salaireAstrid !== null &&
+			revenuCaf !== null
+		) {
+			saveData();
+		}
+	}, [prime, compte, epargne, salaireJacques, salaireAstrid, revenuCaf]);
+
+	// ! ***** FUNCTIONS *****
+	// ? Déconnection autimatique après 15 minutes d'inactivité
+	const logoutAfterInactivity = () => {
+		signOut(auth);
+	};
+
+	const toggleComponent = (component) => {
+		setActiveComponent((prevComponent) =>
+			prevComponent === component ? '' : component
+		);
+	};
+
+	// ! Sauvegarder les données dans firebase
 	const saveData = async () => {
 		if (!currentUser) return;
 		try {
@@ -114,18 +160,41 @@ function Home() {
 					month
 				),
 				{
-					prime: parseFloat(prime),
-					compte: parseFloat(compte),
-					epargne: parseFloat(epargne),
+					prime: parseFloat(prime) || 0,
+					compte: parseFloat(compte) || 0,
+					epargne: parseFloat(epargne) || 0,
+					salaireJacques: parseFloat(salaireJacques) || 0,
+					salaireAstrid: parseFloat(salaireAstrid) || 0,
+					revenuCaf: parseFloat(revenuCaf) || 0,
+					courses: courses,
+					imprevus: imprevus,
 				}
 			);
-			console.log('Données sauvegardées !');
+			toast.success('Mise à jour ok !', {
+				position: 'top-center',
+				autoClose: 2000,
+				hideProgressBar: false,
+				closeOnClick: true,
+				pauseOnHover: true,
+				draggable: true,
+				progress: undefined,
+				theme: 'dark',
+			});
 		} catch (error) {
 			console.error('Erreur lors de la sauvegarde des données : ', error);
+			toast.error('Erreur lors de la sauvegarde des données.', {
+				position: 'top-right',
+				autoClose: 5000,
+				hideProgressBar: false,
+				closeOnClick: true,
+				pauseOnHover: true,
+				draggable: true,
+				progress: undefined,
+			});
 		}
 	};
 
-	// ! RÉCUPÉRER LES DATAS
+	// ! Récupérer les données dans firebase
 	const loadData = async () => {
 		if (!currentUser) return;
 		const month = months[selectedMonth];
@@ -146,137 +215,235 @@ function Home() {
 				setPrime(data.prime);
 				setCompte(data.compte);
 				setEpargne(data.epargne);
+				setSalaireJacques(data.salaireJacques);
+				setSalaireAstrid(data.salaireAstrid);
+				setRevenuCaf(data.revenuCaf);
+				setCourses(data.courses || []);
+				setImprevus(data.imprevus || []);
 			} else {
-				console.log('Pas de données disponibles pour ce mois !');
 				setPrime(null);
 				setCompte(null);
 				setEpargne(null);
+				setSalaireJacques(null);
+				setSalaireAstrid(null);
+				setRevenuCaf(null);
+				setCourses([]);
+				setImprevus([]);
 			}
 		} catch (error) {
 			console.error('Erreur lors du chargement des données : ', error);
 		}
 	};
 
-	useEffect(() => {
-		if (currentUser) {
-			loadData();
+	// ! Sauvegardes temporaires
+	const handleSavePrime = () => {
+		if (tempPrime) {
+			setPrime(parseFloat(tempPrime) || 0);
+			setTempPrime('');
+		} else {
+			return;
 		}
-	}, [currentUser, selectedMonth, selectedYear]);
-
-	useEffect(() => {
-		if (currentUser && prime !== null && compte !== null && epargne !== null) {
-			saveData();
+	};
+	const handleSaveCompte = () => {
+		if (tempCompte) {
+			setCompte(parseFloat(tempCompte) || 0);
+			setTempCompte('');
+		} else {
+			return;
 		}
-	}, [prime, compte, epargne]);
+	};
+	const handleSaveEpargne = () => {
+		if (tempEpargne) {
+			setEpargne(parseFloat(tempEpargne) || 0);
+			setTempEpargne('');
+		} else {
+			return;
+		}
+	};
+	const handleSaveSalaireJacques = () => {
+		if (tempSalaireJacques) {
+			setSalaireJacques(parseFloat(tempSalaireJacques) || 0);
+			setTempSalaireJacques('');
+		} else {
+			return;
+		}
+	};
+	const handleSaveSalaireAstrid = () => {
+		if (tempSalaireAstrid) {
+			setSalaireAstrid(parseFloat(tempSalaireAstrid) || 0);
+			setTempSalaireAstrid('');
+		} else {
+			return;
+		}
+	};
+	const handleSaveRevenuCaf = () => {
+		if (tempRevenuCaf) {
+			setRevenuCaf(parseFloat(tempRevenuCaf) || 0);
+			setTempRevenuCaf('');
+		} else {
+			return;
+		}
+	};
 
+	// ! Gestion des imprévus
+	const handleAddImprevus = () => {
+		setImprevus((prevImprevus) => {
+			const nouveauxImprevus = [...prevImprevus, { libelle: '', montant: '' }];
+			return nouveauxImprevus;
+		});
+	};
+
+	const handleImprevuChange = (index, key, value) => {
+		const nouvelImprevu = [...imprevus];
+		const ancienMontant = parseFloat(nouvelImprevu[index].montant || 0);
+		nouvelImprevu[index][key] = value;
+
+		if (key === 'montant') {
+			const nouveauMontant = parseFloat(value || 0);
+			const difference = nouveauMontant - ancienMontant;
+			setCompte((prevCompte) => prevCompte - difference);
+		}
+
+		setImprevus(nouvelImprevu);
+	};
+
+	const handleSaveImprevus = () => {
+		saveData();
+	};
+
+	// ! Gestion des courses
+	const handleAddCourse = () => {
+		setCourses((prevCourses) => {
+			const newCourses = [...prevCourses, { label: '', amount: '' }];
+			return newCourses;
+		});
+	};
+
+	const handleCourseChange = (index, key, value) => {
+		const newCourses = [...courses];
+		const oldAmount = parseFloat(newCourses[index].amount || 0);
+		newCourses[index][key] = value;
+
+		if (key === 'amount') {
+			const newAmount = parseFloat(value || 0);
+			const difference = newAmount - oldAmount;
+			setCompte((prevCompte) => prevCompte - difference);
+		}
+
+		setCourses(newCourses);
+	};
+
+	const handleSaveCourses = () => {
+		saveData();
+	};
+
+	const getTotalCourses = () => {
+		return courses
+			.reduce((total, course) => total + parseFloat(course.amount || 0), 0)
+			.toFixed(2);
+	};
+
+	// const getDifferenceCourse = () => {
+	// 	return (budgetCourses - parseFloat(getTotalCourses())).toFixed(2);
+	// };
+
+	// ! ***** RETURN *****
 	return (
 		<div className='w-full min-h-screen flex flex-col bg-slate-900 p-4'>
-			<header className='flex justify-between items-center'>
-				<h1 className='text-2xl text-slate-50'>{userWelcome}</h1>
-				<Logout />
-			</header>
+			<ToastContainer
+				position='top-center'
+				autoClose={5000}
+				hideProgressBar={false}
+				newestOnTop={false}
+				closeOnClick
+				rtl={false}
+				pauseOnFocusLoss
+				draggable
+				pauseOnHover
+				theme='dark'
+			/>
 
-			{/* ANNÉE */}
-			<nav className='w-full flex justify-center items-center mt-4'>
-				<div className='flex flex-wrap justify-center items-center gap-2'>
-					{years.map((year) => (
-						<button
-							key={year}
-							onClick={() => setSelectedYear(year)}
-							className={`px-4 py-2 mx-1 rounded ${
-								year === selectedYear
-									? 'bg-slate-600 text-white'
-									: 'bg-slate-400 text-slate-900'
-							}`}>
-							{year}
-						</button>
-					))}
-				</div>
-			</nav>
+			{/* TITRE & LOGOUT */}
+			<Header userWelcome={userWelcome} />
 
-			{/* MOIS DE L'ANNÉE */}
-			<nav className='w-full flex justify-center items-center mt-4'>
-				<div className='flex flex-wrap justify-center items-center gap-2'>
-					{months.map((month, index) => (
-						<button
-							key={index}
-							onClick={() => setSelectedMonth(index)}
-							className={`px-4 py-2 mx-1 rounded ${
-								index === selectedMonth
-									? 'bg-slate-600 text-white'
-									: 'bg-slate-400 text-slate-900'
-							}`}>
-							{month}
-						</button>
-					))}
-				</div>
-			</nav>
+			{/* MOIS & ANNÉES */}
+			<Navbar
+				years={years}
+				selectedYear={selectedYear}
+				setSelectedYear={setSelectedYear}
+				months={months}
+				selectedMonth={selectedMonth}
+				setSelectedMonth={setSelectedMonth}
+			/>
 
-			<section className='bg-slate-800 p-6 rounded-lg shadow-md w-full max-w-6xl mx-auto mt-10'>
-				<h2 className='text-2xl text-slate-50 font-bold text-center mb-10 tracking-wide'>
-					- Tableau de bord -
-				</h2>
-				<div className='flex justify-around items-center'>
-					<div className='grid grid-cols-1 md:grid-cols-3 gap-20'>
-						{/* PRIME */}
-						<div className='flex flex-col items-start'>
-							<label className='text-slate-50 text-lg mb-2'>
-								Ma prime :{' '}
-								{prime !== null ? parseFloat(prime).toFixed(2) : '-'}
-							</label>
-							<div className='flex justify-center items-center'>
-								<input
-									type='number'
-									value={prime !== null ? prime : ''}
-									onChange={(e) => setPrime(parseFloat(e.target.value))}
-									className='w-30 p-2 rounded bg-gray-700 text-white'
-									title='Entrer la prime du mois'
-								/>
-							</div>
-						</div>
+			{/* ***** TABLEAU DE BORD ***** */}
+			<Dashboard
+				prime={prime}
+				tempPrime={tempPrime}
+				setTempPrime={setTempPrime}
+				handleSavePrime={handleSavePrime}
+				compte={compte}
+				tempCompte={tempCompte}
+				setTempCompte={setTempCompte}
+				handleSaveCompte={handleSaveCompte}
+				epargne={epargne}
+				tempEpargne={tempEpargne}
+				setTempEpargne={setTempEpargne}
+				handleSaveEpargne={handleSaveEpargne}
+			/>
 
-						{/* COMPTE */}
-						<div className='flex flex-col items-start'>
-							<label className='text-slate-50 text-lg mb-2'>
-								Mon compte :{' '}
-								{compte !== null ? parseFloat(compte).toFixed(2) : '-'}
-							</label>
-							<div className='flex justify-center items-center'>
-								<input
-									type='number'
-									value={compte !== null ? compte : ''}
-									onChange={(e) => setCompte(parseFloat(e.target.value))}
-									className='w-30 p-2 rounded bg-gray-700 text-white'
-								/>
-							</div>
-						</div>
+			{/* Barre de navigation pour les composants */}
+			<ComponentNavbar toggleComponent={toggleComponent} />
 
-						{/* ÉPARGNE */}
-						<div className='flex flex-col items-start'>
-							<label className='text-slate-50 text-lg mb-2'>
-								Mon épargne :{' '}
-								{epargne !== null ? parseFloat(epargne).toFixed(2) : '-'}
-							</label>
-							<div className='flex justify-center items-center'>
-								<input
-									type='number'
-									value={epargne !== null ? epargne : ''}
-									onChange={(e) => setEpargne(parseFloat(e.target.value))}
-									className='w-30 p-2 rounded bg-gray-700 text-white'
-								/>
-							</div>
-						</div>
-					</div>
-				</div>
-			</section>
+			{/* Affichage des composants en fonction de l'état */}
+			{/* ***** ENTRÉES ***** */}
+			{activeComponent === 'entries' && (
+				<Entries
+					prime={prime}
+					salaireJacques={salaireJacques}
+					tempSalaireJacques={tempSalaireJacques}
+					setTempSalaireJacques={setTempSalaireJacques}
+					handleSaveSalaireJacques={handleSaveSalaireJacques}
+					salaireAstrid={salaireAstrid}
+					tempSalaireAstrid={tempSalaireAstrid}
+					setTempSalaireAstrid={setTempSalaireAstrid}
+					handleSaveSalaireAstrid={handleSaveSalaireAstrid}
+					revenuCaf={revenuCaf} // Pass the revenuCaf state
+					tempRevenuCaf={tempRevenuCaf} // Pass the tempRevenuCaf state
+					setTempRevenuCaf={setTempRevenuCaf} // Pass the setTempRevenuCaf function
+					handleSaveRevenuCaf={handleSaveRevenuCaf} // Pass the handleSaveRevenuCaf function
+				/>
+			)}
 
-			<footer className='text-center text-gray-300 sticky top-full'>
+			{/* ***** COURSES ***** */}
+			{activeComponent === 'courses' && (
+				<Courses
+					budgetCourses={budgetCourses}
+					getTotalCourses={getTotalCourses}
+					handleAddCourse={handleAddCourse}
+					courses={courses}
+					handleCourseChange={handleCourseChange}
+					handleSaveCourses={handleSaveCourses}
+				/>
+			)}
+
+			{/* ***** IMPRÉVUS ***** */}
+			{activeComponent === 'imprevus' && (
+				<Imprevu
+					imprevus={imprevus}
+					handleAddImprevus={handleAddImprevus}
+					handleImprevuChange={handleImprevuChange}
+					handleSaveImprevus={handleSaveImprevus}
+				/>
+			)}
+
+			{/* *** FOOTER *** */}
+			<footer className='text-center text-gray-300 sticky top-full mt-8'>
 				<p>Family bank application - © {currentYear}</p>
 			</footer>
-
 			{showNotification && (
 				<Notification
-					message='Vous allez être déconnecté dans 1 minute pour inactivité.'
+					message='ÊTES-VOUS TOUJOURS LÀ ? (dans 2 minutes vous serez déconnecté).'
 					onClose={() => setShowNotification(false)}
 				/>
 			)}
