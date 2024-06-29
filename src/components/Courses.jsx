@@ -21,7 +21,7 @@ const Courses = ({
 	return (
 		<section className='w-full bg-slate-800 p-6 rounded-lg shadow-md max-w-6xl mx-auto mt-10'>
 			{/* Boutons CTA */}
-			<div className='flex flex-wrap justify-between items-center gap-52 mb-10'>
+			<div className='flex flex-wrap justify-between items-center gap-42 mb-10'>
 				<div className='flex justify-center items-center gap-4'>
 					<input
 						type='number'
