@@ -6,7 +6,7 @@ import componentList from '../data/componentList';
 
 const ComponentNavbar = ({ activeComponent, toggleComponent }) => {
 	return (
-		<div className='w-full mt-8 p-4 flex justify-center items-center gap-8'>
+		<div className='w-full mt-12 p-4 flex justify-center items-center gap-8'>
 			{componentList.map(({ id, nom, title, tag, icon }) => (
 				<div key={id} className='flex justify-center items-center '>
 					<FontAwesomeIcon

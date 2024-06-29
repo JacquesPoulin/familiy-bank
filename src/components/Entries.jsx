@@ -28,7 +28,7 @@ const Entries = ({
 			<section className='w-full bg-slate-800 p-6 rounded-lg shadow-md max-w-6xl mx-auto mt-10'>
 				<h2 className='text-2xl text-green-600 font-bold text-center mb-5 tracking-widest'>
 					ENTRÉES
-					<p className='mt-2 text-lg italic font-light text-yellow-500'>
+					<p className='mt-2 text-lg italic font-light text-green-400'>
 						{/* Affichage du total des entrées */}
 						Entrées fixes du mois :{' '}
 						<span className='animate-pulse'>{totalEntrees.toFixed(2)} €</span>
