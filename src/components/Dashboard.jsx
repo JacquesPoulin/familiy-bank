@@ -34,9 +34,9 @@ const Dashboard = ({
 	return (
 		<section className='bg-slate-800 p-6 rounded-lg shadow-md w-full max-w-6xl mx-auto mt-10'>
 			<div className='flex justify-center items-center'>
-				<h2 className='text-2xl text-yellow-500 font-bold text-center mb-8 tracking-widest'>
-					<FontAwesomeIcon icon={faMoneyBillTrendUp} className='mr-2' /> Tableau
-					de bord (Revolut)
+				<h2 className='text-2xl text-yellow-500 font-medium text-center mb-8 tracking-widest'>
+					<FontAwesomeIcon icon={faMoneyBillTrendUp} className='mr-2' />{' '}
+					DASHBOARD (Revolut)
 					<p
 						className={`mt-2 text-sm italic font-normal ${getResteColorClass(
 							reste

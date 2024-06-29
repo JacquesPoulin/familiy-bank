@@ -21,6 +21,9 @@ import Maison from './Maison';
 import Shopping from './Shopping';
 import Courses from './Courses';
 import ComponentNavbar from './ComponentNavbar';
+import Statistics from './Statistics';
+import ExpenseChart from './ExpenseChart';
+import Recommendations from './Recommendations';
 
 import { months } from '../utils/mois';
 import depensesList from '../data/depensesList';
@@ -787,7 +790,7 @@ function Home() {
 		setShopping((prevShopping) => {
 			const newId =
 				prevShopping.length > 0
-					? Math.max(...prevShopping.map((m) => m.id)) + 1
+					? Math.max(...prevShopping.map((shopping) => shopping.id)) + 1
 					: 1;
 			const newShopping = [
 				...prevShopping,
@@ -798,10 +801,10 @@ function Home() {
 	};
 	const handleShoppingChange = (id, key, value) => {
 		setShopping((prevShopping) => {
-			const nouveauShopping = prevShopping.map((m) => {
-				if (m.id === id) {
-					const ancienMontant = parseFloat(m.montant || 0);
-					const updatedShopping = { ...m, [key]: value };
+			const nouveauShopping = prevShopping.map((shopping) => {
+				if (shopping.id === id) {
+					const ancienMontant = parseFloat(shopping.montant || 0);
+					const updatedShopping = { ...shopping, [key]: value };
 
 					if (key === 'montant') {
 						const nouveauMontant = parseFloat(value || 0);
@@ -822,8 +825,10 @@ function Home() {
 	};
 	const handleDeleteShopping = (id) => {
 		setShopping((prevShopping) => {
-			const newShopping = prevShopping.filter((m) => m.id !== id);
-			const shoppingToRemove = prevShopping.find((m) => m.id === id);
+			const newShopping = prevShopping.filter((shopping) => shopping.id !== id);
+			const shoppingToRemove = prevShopping.find(
+				(shopping) => shopping.id === id
+			);
 			if (shoppingToRemove) {
 				setCompte(
 					(prevCompte) => prevCompte + parseFloat(shoppingToRemove.montant || 0)
@@ -847,7 +852,10 @@ function Home() {
 		saveData();
 	};
 	const getTotalShopping = () => {
-		return shopping.reduce((total, m) => total + parseFloat(m.montant || 0), 0);
+		return shopping.reduce(
+			(total, shopping) => total + parseFloat(shopping.montant || 0),
+			0
+		);
 	};
 
 	// ! Calculer le reste d'argent disponible
@@ -858,6 +866,7 @@ function Home() {
 		const totalCourses = getTotalCourses();
 		const totalLoisirs = getTotalLoisirs();
 		const totalMaison = getTotalMaison();
+		const totalShopping = getTotalShopping();
 
 		const resteTotal =
 			totalEntries -
@@ -866,12 +875,21 @@ function Home() {
 			budgetCourses -
 			budgetImprevus -
 			budgetLoisirs -
-			budgetMaison;
+			budgetMaison -
+			budgetShopping;
 		return resteTotal.toFixed(2);
 	};
 
 	// ! ***** VARIABLES *****
 	const reste = getReste();
+
+	const totalEntries = getTotalEntries();
+	const totalDepenses = getTotalDepenses();
+	const totalImprevus = getTotalImprevus();
+	const totalCourses = getTotalCourses();
+	const totalLoisirs = getTotalLoisirs();
+	const totalMaison = getTotalMaison();
+	const totalShopping = getTotalShopping();
 
 	// ! ***** RETURN *****
 	if (isLoading) {
@@ -1052,8 +1070,42 @@ function Home() {
 				/>
 			)}
 
+			{/* ***** SEPARATOR ***** */}
+			<div className='mt-10 mb-5 h-1 bg-zinc-500'></div>
+
+			{/* ***** STATS ***** */}
+			<Statistics
+				depenses={depenses}
+				imprevus={imprevus}
+				loisirs={loisirs}
+				courses={courses}
+				maison={maison}
+				totalEntries={totalEntries}
+			/>
+
+			{/* ***** GRAPHIQUES ***** */}
+			<ExpenseChart
+				depenses={depenses}
+				imprevus={imprevus}
+				loisirs={loisirs}
+				courses={courses}
+				maison={maison}
+				shopping={shopping}
+			/>
+
+			{/* ***** CONSEILS ***** */}
+			<Recommendations
+				savings={reste}
+				totalDepenses={totalDepenses}
+				totalImprevus={totalImprevus}
+				totalLoisirs={totalLoisirs}
+				totalCourses={totalCourses}
+				totalMaison={totalMaison}
+				totalShopping={totalShopping}
+			/>
+
 			{/* *** FOOTER *** */}
-			<footer className='text-center text-gray-300 sticky top-full mt-8'>
+			<footer className='text-center text-gray-300 sticky top-full mt-40'>
 				<p>Family Budget - © {currentYear}</p>
 			</footer>
 			{showNotification && (

@@ -2,7 +2,6 @@
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
-
 const Courses = ({
 	budgetCourses,
 	tempBudgetCourses,
@@ -38,7 +37,7 @@ const Courses = ({
 						Valider
 					</button>
 				</div>
-				<h2 className='text-2xl text-cyan-600 font-bold text-center tracking-widest'>
+				<h2 className='text-2xl text-amber-400 text-center tracking-widest'>
 					COURSES
 					<p className='mt-2 text-sm italic font-light text-yellow-500'>
 						Toutes les courses du mois

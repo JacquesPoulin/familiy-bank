@@ -27,7 +27,7 @@ const Entries = ({
 		<div className='w-full flex justify-center items-center'>
 			<section className='w-full bg-slate-800 p-6 rounded-lg shadow-md max-w-6xl mx-auto mt-10'>
 				<h2 className='text-2xl text-green-600 font-bold text-center mb-5 tracking-widest'>
-					RENTRÉES
+					ENTRÉES
 					<p className='mt-2 text-lg italic font-light text-yellow-500'>
 						{/* Affichage du total des entrées */}
 						Entrées fixes du mois :{' '}
@@ -40,7 +40,7 @@ const Entries = ({
 					{/* SALAIRE JACQUES */}
 					<div className='flex flex-col justify-center items-center gap-1'>
 						<label className='w-full text-slate-50 text-lg mb-2'>
-							Salaire JP :{' '}
+							Salaire Jacques :{' '}
 							<span className='text-green-600'>
 								{prime ? (
 									<>
@@ -81,8 +81,8 @@ const Entries = ({
 
 					{/* SALAIRE ASTRID */}
 					<div className='flex flex-col justify-center items-center gap-1'>
-						<label className='w-full text-slate-50 text-lg mb-2'>
-							Salaire AAC :{' '}
+						<label className='w-full text-slate-50 text-lg mb-2 tracking-wide'>
+							Salaire Astrid :{' '}
 							<span className='text-green-600'>
 								{salaireAstrid !== null
 									? parseFloat(salaireAstrid).toFixed(2)
@@ -112,7 +112,7 @@ const Entries = ({
 
 					{/* CAF */}
 					<div className='flex flex-col justify-around items-center gap-1 mb-4'>
-						<label className='w-full text-slate-50 text-lg mb-2'>
+						<label className='w-full text-slate-50 text-lg mb-2 tracking-wider'>
 							ALLOCS (CAF) :{' '}
 							<span className='text-green-600'>
 								{revenuCaf !== null ? parseFloat(revenuCaf).toFixed(2) : '0'} €

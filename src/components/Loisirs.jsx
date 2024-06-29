@@ -37,7 +37,7 @@ const Loisirs = ({
 						Valider
 					</button>
 				</div>
-				<h2 className='text-2xl text-cyan-600 font-bold text-center tracking-widest'>
+				<h2 className='text-2xl text-amber-400 text-center tracking-widest'>
 					LOISIRS
 					<p className='mt-2 text-sm italic font-light text-yellow-500'>
 						Toutes les dépenses loisirs (Restos, ...)

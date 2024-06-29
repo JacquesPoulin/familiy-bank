@@ -31,9 +31,9 @@ const Depenses = ({
 
 	return (
 		<section className='w-full bg-slate-800 p-6 rounded-lg shadow-md max-w-6xl mx-auto mt-10'>
-			<h2 className='text-2xl text-cyan-600 font-bold text-center mb-5 tracking-widest'>
+			<h2 className='text-2xl mb-4 text-red-600 text-center tracking-widest'>
 				DÉPENSES (fixes)
-				<p className='mt-2 text-lg italic font-light text-yellow-500'>
+				<p className='mt-2 text-lg italic font-light text-red-400'>
 					{/* Affichage du total des dépenses fixes du mois */}
 					Dépenses prévues ce mois :{' '}
 					<span className='animate-pulse'>{getTotalDepenses()} €</span>
