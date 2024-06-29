@@ -338,6 +338,14 @@ function Home() {
 				setBudgetMaison(data.budgetMaison || 100);
 				setBudgetShopping(data.budgetShopping || 100);
 				setDepenses(data.depenses || []);
+
+				// ? Mettre à jour les comptes des mois futurs
+				if (
+					selectedMonth === new Date().getMonth() &&
+					selectedYear === new Date().getFullYear()
+				) {
+					updateFutureMonthsAccounts(selectedMonth, selectedYear, data.compte);
+				}
 			} else {
 				setPrime(null);
 				setCompte(null);
@@ -367,6 +375,39 @@ function Home() {
 		}
 	};
 
+	// ! Gérer le montant du compte (en fonction du mois en cours)
+	const updateFutureMonthsAccounts = async (
+		currentMonthIndex,
+		currentYear,
+		newAccountValue
+	) => {
+		months.slice(currentMonthIndex + 1).forEach(async (month) => {
+			const docRef = doc(
+				db,
+				'users',
+				currentUser.uid,
+				'years',
+				String(currentYear),
+				'months',
+				month
+			);
+
+			try {
+				const docSnap = await getDoc(docRef);
+				if (docSnap.exists()) {
+					await setDoc(docRef, { compte: newAccountValue }, { merge: true });
+				} else {
+					await setDoc(docRef, { compte: newAccountValue });
+				}
+			} catch (error) {
+				console.error(
+					'Erreur lors de la mise à jour des comptes des mois suivants : ',
+					error
+				);
+			}
+		});
+	};
+
 	// ! Sauvegardes temporaires : comptes, epargne, salaires, caf ...
 	const handleSavePrime = () => {
 		if (tempPrime) {
@@ -378,7 +419,9 @@ function Home() {
 	};
 	const handleSaveCompte = () => {
 		if (tempCompte) {
-			setCompte(parseFloat(tempCompte) || 0);
+			const newAccountValue = parseFloat(tempCompte) || 0;
+			setCompte(newAccountValue);
+			updateFutureMonthsAccounts(selectedMonth, selectedYear, newAccountValue);
 			setTempCompte('');
 		} else {
 			return;
@@ -416,7 +459,6 @@ function Home() {
 			return;
 		}
 	};
-
 	const handleSaveBudgetCourses = () => {
 		if (tempBudgetCourses) {
 			setBudgetCourses(parseFloat(tempBudgetCourses) || 0);
@@ -425,7 +467,6 @@ function Home() {
 			return;
 		}
 	};
-
 	const getTotalEntries = () => {
 		return (
 			parseFloat(prime || 0) +
@@ -450,7 +491,6 @@ function Home() {
 			return newImprevus;
 		});
 	};
-
 	const handleImprevuChange = (id, key, value) => {
 		setImprevus((prevImprevus) => {
 			const nouvelImprevus = prevImprevus.map((imprevu) => {
@@ -475,7 +515,6 @@ function Home() {
 			saveData();
 		}, 500);
 	};
-
 	const handleDeleteImprevu = (id) => {
 		console.log(`L'ID à effacer : ${id}`);
 		setImprevus((prevImprevus) => {
@@ -492,7 +531,6 @@ function Home() {
 			return newImprevus;
 		});
 	};
-
 	const handleSaveBudgetImprevus = () => {
 		if (tempBudgetImprevus) {
 			setBudgetImprevus(parseFloat(tempBudgetImprevus) || 0);
@@ -501,11 +539,9 @@ function Home() {
 			return;
 		}
 	};
-
 	const handleSaveImprevus = () => {
 		saveData();
 	};
-
 	const getTotalImprevus = () => {
 		return imprevus.reduce(
 			(total, imprevu) => total + parseFloat(imprevu.montant || 0),
@@ -518,7 +554,6 @@ function Home() {
 		const ids = depenses.map((depense) => depense.id);
 		return ids.length ? Math.max(...ids) + 1 : 1;
 	};
-
 	const handleAddDepense = () => {
 		setDepenses((prevDepenses) => [
 			...prevDepenses,
@@ -534,7 +569,6 @@ function Home() {
 			},
 		]);
 	};
-
 	const handleDeleteDepense = (id) => {
 		setDepenses((prevDepenses) =>
 			prevDepenses.filter((depense) => depense.id !== id)
@@ -543,7 +577,6 @@ function Home() {
 			saveData();
 		}, 500); // Utilisation de setTimeout pour donner le temps à l'état de se mettre à jour avant de sauvegarder
 	};
-
 	const handleDepenseChange = (id, key, value) => {
 		setDepenses((prevDepenses) =>
 			prevDepenses.map((depense) =>
@@ -552,13 +585,11 @@ function Home() {
 		);
 		saveData();
 	};
-
 	const handleSaveDepenses = () => {
 		setTimeout(() => {
 			saveData();
 		}, 500); // Utilisation de setTimeout pour donner le temps à l'état de se mettre à jour avant de sauvegarder
 	};
-
 	const getTotalDepenses = () => {
 		return depenses
 			.reduce((total, depense) => total + parseFloat(depense.montant || 0.0), 0)
@@ -577,7 +608,6 @@ function Home() {
 			return newCourses;
 		});
 	};
-
 	const handleDeleteCourse = (id) => {
 		setCourses((prevCourses) => {
 			const newCourses = prevCourses.filter((course) => course.id !== id);
@@ -591,7 +621,6 @@ function Home() {
 		});
 		saveData();
 	};
-
 	const handleCourseChange = (index, key, value) => {
 		const newCourses = [...courses];
 		const oldAmount = parseFloat(newCourses[index].amount || 0);
@@ -605,11 +634,9 @@ function Home() {
 
 		setCourses(newCourses);
 	};
-
 	const handleSaveCourses = () => {
 		saveData();
 	};
-
 	const getTotalCourses = () => {
 		return courses
 			.reduce((total, course) => total + parseFloat(course.amount || 0), 0)
@@ -630,7 +657,6 @@ function Home() {
 			return newLoisirs;
 		});
 	};
-
 	const handleLoisirChange = (id, key, value) => {
 		setLoisirs((prevLoisirs) => {
 			const nouveauLoisirs = prevLoisirs.map((loisir) => {
@@ -655,7 +681,6 @@ function Home() {
 			saveData();
 		}, 500);
 	};
-
 	const handleDeleteLoisir = (id) => {
 		setLoisirs((prevLoisirs) => {
 			const newLoisirs = prevLoisirs.filter((loisir) => loisir.id !== id);
@@ -671,7 +696,6 @@ function Home() {
 			return newLoisirs;
 		});
 	};
-
 	const handleSaveBudgetLoisirs = () => {
 		if (tempBudgetLoisirs) {
 			setBudgetLoisirs(parseFloat(tempBudgetLoisirs) || 0);
@@ -680,11 +704,9 @@ function Home() {
 			return;
 		}
 	};
-
 	const handleSaveLoisirs = () => {
 		saveData();
 	};
-
 	const getTotalLoisirs = () => {
 		return loisirs.reduce(
 			(total, loisir) => total + parseFloat(loisir.montant || 0),
@@ -706,7 +728,6 @@ function Home() {
 			return newMaison;
 		});
 	};
-
 	const handleMaisonChange = (id, key, value) => {
 		setMaison((prevMaison) => {
 			const nouveauMaison = prevMaison.map((m) => {
@@ -731,7 +752,6 @@ function Home() {
 			saveData();
 		}, 500);
 	};
-
 	const handleDeleteMaison = (id) => {
 		setMaison((prevMaison) => {
 			const newMaison = prevMaison.filter((m) => m.id !== id);
@@ -747,7 +767,6 @@ function Home() {
 			return newMaison;
 		});
 	};
-
 	const handleSaveBudgetMaison = () => {
 		if (tempBudgetMaison) {
 			setBudgetMaison(parseFloat(tempBudgetMaison) || 0);
@@ -756,11 +775,9 @@ function Home() {
 			return;
 		}
 	};
-
 	const handleSaveMaison = () => {
 		saveData();
 	};
-
 	const getTotalMaison = () => {
 		return maison.reduce((total, m) => total + parseFloat(m.montant || 0), 0);
 	};
@@ -779,7 +796,6 @@ function Home() {
 			return newShopping;
 		});
 	};
-
 	const handleShoppingChange = (id, key, value) => {
 		setShopping((prevShopping) => {
 			const nouveauShopping = prevShopping.map((m) => {
@@ -804,7 +820,6 @@ function Home() {
 			saveData();
 		}, 500);
 	};
-
 	const handleDeleteShopping = (id) => {
 		setShopping((prevShopping) => {
 			const newShopping = prevShopping.filter((m) => m.id !== id);
@@ -820,7 +835,6 @@ function Home() {
 			return newShopping;
 		});
 	};
-
 	const handleSaveBudgetShopping = () => {
 		if (tempBudgetShopping) {
 			setBudgetShopping(parseFloat(tempBudgetShopping) || 0);
@@ -829,16 +843,14 @@ function Home() {
 			return;
 		}
 	};
-
 	const handleSaveShopping = () => {
 		saveData();
 	};
-
 	const getTotalShopping = () => {
 		return shopping.reduce((total, m) => total + parseFloat(m.montant || 0), 0);
 	};
 
-	// ! Calculer le reste d'argent
+	// ! Calculer le reste d'argent disponible
 	const getReste = () => {
 		const totalEntries = getTotalEntries();
 		const totalDepenses = getTotalDepenses();

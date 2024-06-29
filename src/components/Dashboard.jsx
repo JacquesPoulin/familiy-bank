@@ -43,13 +43,10 @@ const Dashboard = ({
 						)} animate-pulse`}>
 						{/* Affichage du reste d'argent */}
 						{totalEntrees === 0 ? (
-							<span>
-								Reste :{' '}
-								<span>Veuillez indiquer au moins une entrée d'argent</span>
-							</span>
+							<span>Veuillez indiquer au moins une entrée d'argent</span>
 						) : (
 							<span>
-								Reste : <span>{reste} €</span>
+								Reste disponible : <span>{reste} €</span>
 							</span>
 						)}
 					</p>
