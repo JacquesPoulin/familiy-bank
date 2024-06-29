@@ -862,16 +862,10 @@ function Home() {
 	const getReste = () => {
 		const totalEntries = getTotalEntries();
 		const totalDepenses = getTotalDepenses();
-		const totalImprevus = getTotalImprevus();
-		const totalCourses = getTotalCourses();
-		const totalLoisirs = getTotalLoisirs();
-		const totalMaison = getTotalMaison();
-		const totalShopping = getTotalShopping();
 
 		const resteTotal =
 			totalEntries -
 			totalDepenses -
-			totalImprevus -
 			budgetCourses -
 			budgetImprevus -
 			budgetLoisirs -
