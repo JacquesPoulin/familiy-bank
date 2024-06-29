@@ -56,19 +56,19 @@ const Courses = ({
 			<div className='flex flex-col items-center mb-5'>
 				{/* Résumé */}
 				<div className='flex justify-center items-center gap-20 mb-8'>
-					<label className='text-cyan-600 text-lg'>
+					<label className='text-cyan-600 text-2xl'>
 						Budget courses : {parseFloat(budgetCourses)} €
 					</label>
-					<label className='text-slate-50 text-lg tracking-wide'>
+					<label className='text-slate-50 text-2xl tracking-wide'>
 						Dépenses en cours : {getTotalCourses()} €
 					</label>
 					{resteCourses > 0 && (
-						<label className='text-green-600 text-xl animate-pulse'>
+						<label className='text-green-600 text-2xl animate-pulse'>
 							Reste : {resteCourses} €
 						</label>
 					)}
 					{resteCourses < 0 && (
-						<label className='text-red-500 text-xl animate-pulse'>
+						<label className='text-red-500 text-2xl animate-pulse'>
 							Dépassement : {resteCourses} €
 						</label>
 					)}
