@@ -83,15 +83,21 @@ const Statistics = ({
 							<li className='text-green-600'>
 								Total des revenus : {totalEntries} €
 							</li>
-							<li>Total des dépenses : {totalDepenses.toFixed(2)} €</li>
-							<li>Total des imprévus : {totalImprevus.toFixed(2)} €</li>
+							<li className='text-red-600'>
+								Total des dépenses : {totalDepenses.toFixed(2)} €
+							</li>
+							<li className='text-red-600'>
+								Total des imprévus : {totalImprevus.toFixed(2)} €
+							</li>
 							<li>Total des loisirs : {totalLoisirs.toFixed(2)} €</li>
 						</ul>
 					</div>
 
 					<div>
 						<ul className='flex flex-col gap-2 text-xl tracking-wider'>
-							<li>Total des courses : {totalCourses.toFixed(2)} €</li>
+							<li className='text-red-600'>
+								Total des courses : {totalCourses.toFixed(2)} €
+							</li>
 							<li>Total des dépenses maison : {totalMaison.toFixed(2)} €</li>
 							<li>
 								Total des dépenses shopping : {totalShopping.toFixed(2)} €
