@@ -18,6 +18,7 @@ import Depenses from './Depenses';
 import Imprevu from './Imprevu';
 import Loisirs from './Loisirs';
 import Maison from './Maison';
+import Shopping from './Shopping';
 import Courses from './Courses';
 import ComponentNavbar from './ComponentNavbar';
 
@@ -48,11 +49,13 @@ function Home() {
 	const [imprevus, setImprevus] = useState([]);
 	const [loisirs, setLoisirs] = useState([]);
 	const [maison, setMaison] = useState([]);
+	const [shopping, setShopping] = useState([]);
 	const [activeComponent, setActiveComponent] = useState('');
 	const [budgetCourses, setBudgetCourses] = useState(450);
 	const [budgetImprevus, setBudgetImprevus] = useState(100);
 	const [budgetLoisirs, setBudgetLoisirs] = useState(200);
 	const [budgetMaison, setBudgetMaison] = useState(100);
+	const [budgetShopping, setBudgetShopping] = useState(100);
 	const [isLoading, setIsLoading] = useState(true);
 
 	// ? STATE TEMPORAIRE
@@ -66,6 +69,7 @@ function Home() {
 	const [tempBudgetImprevus, setTempBudgetImprevus] = useState('');
 	const [tempBudgetLoisirs, setTempBudgetLoisirs] = useState('');
 	const [tempBudgetMaison, setTempBudgetMaison] = useState('');
+	const [tempBudgetShopping, setTempBudgetShopping] = useState('');
 
 	// ! ****** HOOKS ******
 	// ! Gestion du message de bienvenue de l'utilisateur
@@ -145,7 +149,8 @@ function Home() {
 			budgetImprevus !== null &&
 			depenses !== null &&
 			budgetLoisirs !== null &&
-			budgetMaison
+			budgetMaison !== null &&
+			budgetShopping
 		) {
 			debouncedSaveData();
 		}
@@ -160,6 +165,7 @@ function Home() {
 		budgetImprevus,
 		budgetLoisirs,
 		budgetMaison,
+		budgetShopping,
 		depenses,
 	]);
 
@@ -251,11 +257,13 @@ function Home() {
 					imprevus: imprevus,
 					loisirs: loisirs,
 					maison: maison,
+					shopping: shopping,
 					courses: courses,
 					budgetCourses: parseFloat(budgetCourses) || 450,
 					budgetImprevus: parseFloat(budgetImprevus) || 100,
 					budgetLoisirs: parseFloat(budgetLoisirs) || 200,
 					budgetMaison: parseFloat(budgetMaison) || 100,
+					budgetShopping: parseFloat(budgetShopping) || 100,
 					depenses: depenses,
 				}
 			);
@@ -309,11 +317,13 @@ function Home() {
 				setImprevus(data.imprevus || []);
 				setLoisirs(data.loisirs || []);
 				setMaison(data.maison || []);
+				setShopping(data.maison || []);
 				setCourses(data.courses || []);
 				setBudgetCourses(data.budgetCourses || 450);
 				setBudgetImprevus(data.budgetImprevus || 100);
 				setBudgetLoisirs(data.budgetLoisirs || 200);
 				setBudgetMaison(data.budgetMaison || 100);
+				setBudgetShopping(data.budgetShopping || 100);
 				setDepenses(data.depenses || []);
 			} else {
 				setPrime(null);
@@ -326,10 +336,11 @@ function Home() {
 				setBudgetImprevus(100);
 				setBudgetLoisirs(200);
 				setBudgetMaison(100);
+				setBudgetShopping(100);
 				setCourses([]);
 				setImprevus([]);
 				setLoisirs([]);
-				setMaison([]);
+				setShopping([]);
 				const previousDepenses = await copyPreviousMonthDepenses(
 					selectedMonth,
 					selectedYear
@@ -741,20 +752,96 @@ function Home() {
 		return maison.reduce((total, m) => total + parseFloat(m.montant || 0), 0);
 	};
 
+	// ! Gestion des dépenses de shopping
+	const handleAddShopping = () => {
+		setShopping((prevShopping) => {
+			const newId =
+				prevShopping.length > 0
+					? Math.max(...prevShopping.map((m) => m.id)) + 1
+					: 1;
+			const newShopping = [
+				...prevShopping,
+				{ id: newId, libelle: '', montant: '' },
+			];
+			return newShopping;
+		});
+	};
+
+	const handleShoppingChange = (id, key, value) => {
+		setShopping((prevShopping) => {
+			const nouveauShopping = prevShopping.map((m) => {
+				if (m.id === id) {
+					const ancienMontant = parseFloat(m.montant || 0);
+					const updatedShopping = { ...m, [key]: value };
+
+					if (key === 'montant') {
+						const nouveauMontant = parseFloat(value || 0);
+						const difference = nouveauMontant - ancienMontant;
+						setCompte((prevCompte) => prevCompte - difference);
+					}
+
+					return updatedShopping;
+				}
+				return shopping;
+			});
+
+			return nouveauShopping;
+		});
+		setTimeout(() => {
+			saveData();
+		}, 500);
+	};
+
+	const handleDeleteShopping = (id) => {
+		setShopping((prevShopping) => {
+			const newShopping = prevShopping.filter((m) => m.id !== id);
+			const shoppingToRemove = prevShopping.find((m) => m.id === id);
+			if (shoppingToRemove) {
+				setCompte(
+					(prevCompte) => prevCompte + parseFloat(shoppingToRemove.montant || 0)
+				); // Ajuster le compte
+			}
+			setTimeout(() => {
+				saveData(newShopping); // Pass the updated loisirs to saveData
+			}, 500); // Utilisation de setTimeout pour donner le temps à l'état de se mettre à jour avant de sauvegarder
+			return newShopping;
+		});
+	};
+
+	const handleSaveBudgetShopping = () => {
+		if (tempBudgetShopping) {
+			setBudgetShopping(parseFloat(tempBudgetShopping) || 0);
+			setTempBudgetShopping('');
+		} else {
+			return;
+		}
+	};
+
+	const handleSaveShopping = () => {
+		saveData();
+	};
+
+	const getTotalShopping = () => {
+		return shopping.reduce((total, m) => total + parseFloat(m.montant || 0), 0);
+	};
+
 	// ! Calculer le reste d'argent
 	const getReste = () => {
 		const totalEntries = getTotalEntries();
 		const totalDepenses = getTotalDepenses();
 		const totalImprevus = getTotalImprevus();
 		const totalCourses = getTotalCourses();
+		const totalLoisirs = getTotalLoisirs();
+		const totalMaison = getTotalMaison();
 
 		const resteTotal =
 			totalEntries -
 			totalDepenses -
 			totalImprevus -
 			budgetCourses -
-			totalCourses;
-
+			budgetImprevus -
+			budgetLoisirs -
+			budgetMaison;
 		return resteTotal.toFixed(2);
 	};
 
@@ -907,7 +994,7 @@ function Home() {
 				/>
 			)}
 
-			{/* ***** LOISIRS ***** */}
+			{/* ***** MAISON ***** */}
 			{activeComponent === 'maison' && (
 				<Maison
 					maison={maison}
@@ -920,6 +1007,22 @@ function Home() {
 					handleSaveBudgetMaison={handleSaveBudgetMaison}
 					getTotalMaison={getTotalMaison}
 					handleDeleteMaison={handleDeleteMaison}
+				/>
+			)}
+
+			{/* ***** SHOPPING ***** */}
+			{activeComponent === 'shopping' && (
+				<Shopping
+					shopping={shopping}
+					handleAddShopping={handleAddShopping}
+					handleShoppingChange={handleShoppingChange}
+					handleSaveShopping={handleSaveShopping}
+					budgetShopping={budgetShopping}
+					tempBudgetShopping={tempBudgetShopping}
+					setTempBudgetShopping={setTempBudgetShopping}
+					handleSaveBudgetShopping={handleSaveBudgetShopping}
+					getTotalShopping={getTotalShopping}
+					handleDeleteShopping={handleDeleteShopping}
 				/>
 			)}
 

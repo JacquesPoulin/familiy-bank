@@ -1,24 +1,23 @@
-// ! Composant qui gère les imprévus
+// ! Composant qui gère les dépenses de shopping
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
 
-const Imprevu = ({
-	imprevus,
-	handleAddImprevus,
-	handleImprevuChange,
-	handleDeleteImprevu,
-	budgetImprevus,
-	tempBudgetImprevus,
-	setTempBudgetImprevus,
-	handleSaveBudgetImprevus,
-	getTotalImprevus,
+const Shopping = ({
+	shopping,
+	handleAddShopping,
+	handleShoppingChange,
+	handleDeleteShopping,
+	budgetShopping,
+	tempBudgetShopping,
+	setTempBudgetShopping,
+	handleSaveBudgetShopping,
+	getTotalShopping,
 }) => {
-	// ! ** VARIABLES **
+	const totalShopping = getTotalShopping();
 
-	const totalImprevus = getTotalImprevus();
-	const resteImprevus =
-		parseFloat(budgetImprevus) - parseFloat(totalImprevus).toFixed(2);
+	const resteShopping =
+		parseFloat(budgetShopping) - parseFloat(totalShopping).toFixed(2);
 
 	return (
 		<section className='w-full bg-slate-800 p-6 rounded-lg shadow-md max-w-6xl mx-auto mt-10'>
@@ -26,64 +25,64 @@ const Imprevu = ({
 				<div className='flex justify-center items-center gap-4'>
 					<input
 						type='number'
-						value={tempBudgetImprevus}
-						onChange={(e) => setTempBudgetImprevus(e.target.value)}
+						value={tempBudgetShopping}
+						onChange={(e) => setTempBudgetShopping(e.target.value)}
 						className='w-44 p-2 rounded bg-gray-700 text-white'
 						placeholder='Modifier le budget'
 					/>
 					<button
 						type='button'
 						className='w-auto text-lg text-center bg-blue-500 px-4 py-1 rounded text-slate-50 hover:bg-blue-600 tracking-wide'
-						onClick={handleSaveBudgetImprevus}
+						onClick={handleSaveBudgetShopping}
 						title='Valider le budget du mois'>
 						Valider
 					</button>
 				</div>
 				<h2 className='text-2xl text-cyan-600 font-bold text-center tracking-widest'>
-					IMPRÉVUS
+					SHOPPING
 					<p className='mt-2 text-sm italic font-light text-yellow-500'>
-						Dépenses imprévues & ponctuelles
+						Toutes les achats plaisrs (décathlon, vinted...)
 					</p>
 				</h2>
 				<button
 					type='button'
-					className='w-auto h-10 flex flex-center items-center gap-2 text-lg text-center bg-green-700 p-2 rounded text-slate-50 hover:bg-green-600'
-					onClick={handleAddImprevus}
-					title='Ajouter un nouvel impévu'>
-					Ajouter un imprévu
+					className='w-auto h-10 flex flex-center items-center gap-2 text-lg text-center bg-green-700 p-2 rounded text-slate-50 hover:bg-green-600 tracking-wide'
+					onClick={handleAddShopping}
+					title='Ajouter une dépense de shopping'>
+					Ajouter dépense
 				</button>
 			</div>
 
 			<div className='flex flex-col items-center mb-5'>
 				<div className='flex justify-center items-center gap-20 mb-8'>
-					<label className='text-cyan-600 text-lg'>
-						Budget imprévus : {parseFloat(budgetImprevus)} €
+					<label className='text-slate-50 text-lg'>
+						Budget pour le shopping : {parseFloat(budgetShopping)} €
 					</label>
 					<label className='text-slate-50 text-lg tracking-wide'>
-						Dépenses en cours : {totalImprevus} €
+						Dépenses shopping : {totalShopping} €
 					</label>
-					{resteImprevus > 0 && (
+					{resteShopping > 0 && (
 						<label className='text-green-600 text-xl animate-pulse'>
-							Reste : {resteImprevus} €
+							Reste : {resteShopping} €
 						</label>
 					)}
-					{resteImprevus < 0 && (
+					{resteShopping < 0 && (
 						<label className='text-red-500 text-xl animate-pulse'>
-							Dépassement : {resteImprevus} €
+							Dépassement : {resteShopping} €
 						</label>
 					)}
 				</div>
 
-				{imprevus.map((imprevu) => (
+				{shopping.map((m) => (
 					<div
-						key={imprevu.id}
+						key={m.id}
 						className='flex justify-center items-center gap-5 mb-2'>
 						<input
 							type='text'
 							placeholder='Libellé'
-							value={imprevu.libelle}
+							value={m.libelle}
 							onChange={(e) =>
-								handleImprevuChange(imprevu.id, 'libelle', e.target.value)
+								handleShoppingChange(m.id, 'libelle', e.target.value)
 							}
 							className='w-72 p-2 rounded bg-gray-700 text-slate-50 mr-2 text-center'
 						/>
@@ -91,17 +90,17 @@ const Imprevu = ({
 						<input
 							type='number'
 							placeholder='Montant'
-							value={imprevu.montant}
+							value={m.montant}
 							onChange={(e) =>
-								handleImprevuChange(imprevu.id, 'montant', e.target.value)
+								handleShoppingChange(m.id, 'montant', e.target.value)
 							}
 							className='max-w-40 p-2 rounded bg-gray-700 text-slate-50 text-center'
 						/>
 						<button
 							type='button'
 							className='w-10 h-10 ml-5 text-lg text-center bg-red-500 p-2 rounded text-slate-50 hover:bg-red-600'
-							title="Supprimer l'imprévu"
-							onClick={() => handleDeleteImprevu(imprevu.id)}>
+							title='Supprimer la dépenses shopping'
+							onClick={() => handleDeleteShopping(m.id)}>
 							<FontAwesomeIcon icon={faTrash} />
 						</button>
 					</div>
@@ -111,4 +110,4 @@ const Imprevu = ({
 	);
 };
 
-export default Imprevu;
+export default Shopping;

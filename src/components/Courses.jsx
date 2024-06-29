@@ -57,8 +57,8 @@ const Courses = ({
 			<div className='flex flex-col items-center mb-5'>
 				{/* Résumé */}
 				<div className='flex justify-center items-center gap-20 mb-8'>
-					<label className='text-slate-50 text-lg'>
-						Budget courses : {parseFloat(budgetCourses).toFixed(2)} €
+					<label className='text-cyan-600 text-lg'>
+						Budget courses : {parseFloat(budgetCourses)} €
 					</label>
 					<label className='text-slate-50 text-lg tracking-wide'>
 						Dépenses en cours : {getTotalCourses()} €

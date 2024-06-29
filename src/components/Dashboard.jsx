@@ -17,11 +17,6 @@ const Dashboard = ({
 	setTempEpargne,
 	handleSaveEpargne,
 	reste,
-	getTotalEntries,
-	getTotalDepenses,
-	getTotalImprevus,
-	getTotalCourses,
-	budgetCourses,
 }) => {
 	// ! FONTION : Déterminer la couleur du reste
 	const getResteColorClass = (reste) => {

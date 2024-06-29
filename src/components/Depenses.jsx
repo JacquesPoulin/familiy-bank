@@ -16,10 +16,11 @@ const Depenses = ({
 	const getTotalByCompte = () => {
 		const totals = {};
 		depenses.forEach((depense) => {
-			if (totals[depense.compte]) {
-				totals[depense.compte] += parseFloat(depense.montant || 0);
+			const compte = depense.compte || 'Revolut'; // Définir un compte par défaut si le champ est vide ou indéfini
+			if (totals[compte]) {
+				totals[compte] += parseFloat(depense.montant || 0);
 			} else {
-				totals[depense.compte] = parseFloat(depense.montant || 0);
+				totals[compte] = parseFloat(depense.montant || 0);
 			}
 		});
 		return totals;

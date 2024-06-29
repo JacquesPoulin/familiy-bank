@@ -37,6 +37,12 @@ const componentList = [
 		title: 'Toute les dépenses du mois concernant la maison',
 		tag: 'maison',
 	},
+	{
+		id: 7,
+		nom: 'Shopping',
+		title: 'Toute les dépenses du mois concernant le shopping',
+		tag: 'shopping',
+	},
 ];
 
 export default componentList;

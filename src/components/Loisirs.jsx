@@ -15,7 +15,8 @@ const Loisirs = ({
 	getTotalLoisirs,
 }) => {
 	const totalLoisirs = getTotalLoisirs();
-	const resteLoisirs = parseFloat(budgetLoisirs) - parseFloat(totalLoisirs).toFixed(2)
+	const resteLoisirs =
+		parseFloat(budgetLoisirs) - parseFloat(totalLoisirs).toFixed(2);
 
 	return (
 		<section className='w-full bg-slate-800 p-6 rounded-lg shadow-md max-w-6xl mx-auto mt-10'>
@@ -53,8 +54,8 @@ const Loisirs = ({
 
 			<div className='flex flex-col items-center mb-5'>
 				<div className='flex justify-center items-center gap-20 mb-8'>
-					<label className='text-slate-50 text-lg'>
-						Budget loisirs : {parseFloat(budgetLoisirs).toFixed(2)} €
+					<label className='text-cyan-600 text-lg'>
+						Budget loisirs : {parseFloat(budgetLoisirs)} €
 					</label>
 					<label className='text-slate-50 text-lg tracking-wide'>
 						Dépenses en cours : {totalLoisirs} €

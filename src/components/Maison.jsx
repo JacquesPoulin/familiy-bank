@@ -55,8 +55,8 @@ const Maison = ({
 
 			<div className='flex flex-col items-center mb-5'>
 				<div className='flex justify-center items-center gap-20 mb-8'>
-					<label className='text-slate-50 text-lg'>
-						Budget pour la maison : {parseFloat(budgetMaison).toFixed(2)} €
+					<label className='text-cyan-600 text-lg'>
+						Budget pour la maison : {parseFloat(budgetMaison)} €
 					</label>
 					<label className='text-slate-50 text-lg tracking-wide'>
 						Dépenses en maison : {totalMaison} €
