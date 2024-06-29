@@ -64,12 +64,12 @@ const Imprevu = ({
 					</label>
 					{resteImprevus > 0 && (
 						<label className='text-green-600 text-2xl animate-pulse'>
-							Reste : {resteImprevus} €
+							Reste : {resteImprevus.toFixed(2)} €
 						</label>
 					)}
 					{resteImprevus < 0 && (
 						<label className='text-red-500 text-2xl animate-pulse'>
-							Dépassement : {resteImprevus} €
+							Dépassement : {resteImprevus.toFixed(2)} €
 						</label>
 					)}
 				</div>

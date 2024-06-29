@@ -63,12 +63,12 @@ const Shopping = ({
 					</label>
 					{resteShopping > 0 && (
 						<label className='text-green-600 text-xl animate-pulse'>
-							Reste : {resteShopping} €
+							Reste : {resteShopping.toFixed(2)} €
 						</label>
 					)}
 					{resteShopping < 0 && (
 						<label className='text-red-500 text-xl animate-pulse'>
-							Dépassement : {resteShopping} €
+							Dépassement : {resteShopping.toFixed(2)} €
 						</label>
 					)}
 				</div>

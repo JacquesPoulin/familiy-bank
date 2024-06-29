@@ -64,12 +64,12 @@ const Courses = ({
 					</label>
 					{resteCourses > 0 && (
 						<label className='text-green-600 text-2xl animate-pulse'>
-							Reste : {resteCourses} €
+							Reste : {resteCourses.toFixed(2)} €
 						</label>
 					)}
 					{resteCourses < 0 && (
 						<label className='text-red-500 text-2xl animate-pulse'>
-							Dépassement : {resteCourses} €
+							Dépassement : {resteCourses.toFixed(2)} €
 						</label>
 					)}
 				</div>

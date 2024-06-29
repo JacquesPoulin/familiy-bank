@@ -58,16 +58,16 @@ const Loisirs = ({
 						Budget loisirs : {parseFloat(budgetLoisirs)} €
 					</label>
 					<label className='text-slate-50 text-2xl tracking-wide'>
-						Dépenses en cours : {totalLoisirs} €
+						Dépenses en cours : {totalLoisirs.toFixed(2)} €
 					</label>
 					{resteLoisirs > 0 && (
 						<label className='text-green-600 text-2xl animate-pulse'>
-							Reste : {resteLoisirs} €
+							Reste : {resteLoisirs.toFixed(2)} €
 						</label>
 					)}
 					{resteLoisirs < 0 && (
 						<label className='text-red-500 text-2xl animate-pulse'>
-							Dépassement : {resteLoisirs} €
+							Dépassement : {resteLoisirs.toFixed(2)} €
 						</label>
 					)}
 				</div>
