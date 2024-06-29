@@ -70,6 +70,7 @@ function Home() {
 	const [tempBudgetLoisirs, setTempBudgetLoisirs] = useState('');
 	const [tempBudgetMaison, setTempBudgetMaison] = useState('');
 	const [tempBudgetShopping, setTempBudgetShopping] = useState('');
+	const [totalEntrees, setTotalEntrees] = useState('');
 
 	// ! ****** HOOKS ******
 	// ! Gestion du message de bienvenue de l'utilisateur
@@ -135,6 +136,18 @@ function Home() {
 
 		checkAuthAndLoadData();
 	}, [currentUser, selectedMonth, selectedYear]);
+
+	useEffect(() => {
+		const calculateTotalEntries = () => {
+			const total =
+				(parseFloat(salaireJacques) || 0) +
+				(parseFloat(salaireAstrid) || 0) +
+				(parseFloat(revenuCaf) || 0);
+			setTotalEntrees(total);
+		};
+
+		calculateTotalEntries();
+	}, [salaireJacques, salaireAstrid, revenuCaf, selectedMonth, selectedYear]);
 
 	useEffect(() => {
 		if (
@@ -905,6 +918,7 @@ function Home() {
 				getTotalImprevus={getTotalImprevus}
 				getTotalCourses={getTotalCourses}
 				budgetCourses={budgetCourses}
+				totalEntrees={totalEntrees}
 			/>
 
 			{/* Barre de navigation pour les composants */}

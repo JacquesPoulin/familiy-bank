@@ -1,5 +1,5 @@
 // components/Dashboard.jsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMoneyBillTrendUp, faCheck } from '@fortawesome/free-solid-svg-icons';
 
@@ -17,6 +17,12 @@ const Dashboard = ({
 	setTempEpargne,
 	handleSaveEpargne,
 	reste,
+	getTotalEntries,
+	getTotalDepenses,
+	getTotalImprevus,
+	getTotalCourses,
+	budgetCourses,
+	totalEntrees,
 }) => {
 	// ! FONTION : Déterminer la couleur du reste
 	const getResteColorClass = (reste) => {
@@ -36,7 +42,16 @@ const Dashboard = ({
 							reste
 						)} animate-pulse`}>
 						{/* Affichage du reste d'argent */}
-						Reste : <span>{reste} €</span>
+						{totalEntrees === 0 ? (
+							<span>
+								Reste :{' '}
+								<span>Veuillez indiquer au moins une entrée d'argent</span>
+							</span>
+						) : (
+							<span>
+								Reste : <span>{reste} €</span>
+							</span>
+						)}
 					</p>
 				</h2>
 			</div>
