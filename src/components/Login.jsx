@@ -19,7 +19,7 @@ function Login() {
 
 	return (
 		<div className='w-full flex flex-col justify-center items-center min-h-screen gap-10'>
-			<p className='text-slate-50 animate-bounce'>Veuillez vous connecter...</p>
+			<p className='text-slate-50 animate-pulse'>Veuillez vous connecter...</p>
 
 			<div className='w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md'>
 				<h2 className='text-2xl font-bold text-center'>Connexion</h2>

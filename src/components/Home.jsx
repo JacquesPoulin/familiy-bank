@@ -1,30 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+
 import { useAuth } from '../contexts/AuthContext';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '../utils/firebase.config';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
-import Logout from './Logout';
+import debounce from 'lodash.debounce';
+import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer, toast } from 'react-toastify';
+
 import Notification from './globals/Notification';
 import Header from './Header';
 import Navbar from './Navbar';
 import Dashboard from './Dashboard';
 import Entries from './Entries';
+import Depenses from './Depenses';
 import Imprevu from './Imprevu';
+import Loisirs from './Loisirs';
+import Maison from './Maison';
 import Courses from './Courses';
 import ComponentNavbar from './ComponentNavbar';
-import { months } from '../utils/mois';
 
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-	faWallet,
-	faMoneyBillTrendUp,
-	faArrowsRotate,
-	faCheck,
-	faPlus,
-} from '@fortawesome/free-solid-svg-icons';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { months } from '../utils/mois';
+import depensesList from '../data/depensesList';
 
 // ! ****** VARIABLES ******
 const currentYear = new Date().getFullYear();
@@ -32,7 +30,6 @@ const years = Array.from(
 	new Array(2),
 	(val, index) => new Date().getFullYear() - index
 );
-const budgetCourses = 560;
 
 function Home() {
 	const [userWelcome, setUserWelcome] = useState('');
@@ -47,8 +44,16 @@ function Home() {
 	const [selectedYear, setSelectedYear] = useState(currentYear);
 	const { currentUser } = useAuth();
 	const [courses, setCourses] = useState([]);
+	const [depenses, setDepenses] = useState([]);
 	const [imprevus, setImprevus] = useState([]);
+	const [loisirs, setLoisirs] = useState([]);
+	const [maison, setMaison] = useState([]);
 	const [activeComponent, setActiveComponent] = useState('');
+	const [budgetCourses, setBudgetCourses] = useState(450);
+	const [budgetImprevus, setBudgetImprevus] = useState(100);
+	const [budgetLoisirs, setBudgetLoisirs] = useState(200);
+	const [budgetMaison, setBudgetMaison] = useState(100);
+	const [isLoading, setIsLoading] = useState(true);
 
 	// ? STATE TEMPORAIRE
 	const [tempPrime, setTempPrime] = useState('');
@@ -57,23 +62,26 @@ function Home() {
 	const [tempSalaireJacques, setTempSalaireJacques] = useState('');
 	const [tempSalaireAstrid, setTempSalaireAstrid] = useState('');
 	const [tempRevenuCaf, setTempRevenuCaf] = useState('');
+	const [tempBudgetCourses, setTempBudgetCourses] = useState('');
+	const [tempBudgetImprevus, setTempBudgetImprevus] = useState('');
+	const [tempBudgetLoisirs, setTempBudgetLoisirs] = useState('');
+	const [tempBudgetMaison, setTempBudgetMaison] = useState('');
 
 	// ! ****** HOOKS ******
 	// ! Gestion du message de bienvenue de l'utilisateur
 	useEffect(() => {
 		const currentHour = new Date().getHours();
 		let greeting = '';
-
 		if (currentHour >= 19 || currentHour < 5) {
-			greeting = 'Bonsoir';
+			greeting = 'Bonsoir !';
 		} else {
-			greeting = 'Bonjour';
+			greeting = 'Bonjour !';
 		}
 
 		if (currentUser && currentUser.email === 'jacques.poulin64@gmail.com') {
-			setUserWelcome(`${greeting}, Jacques !`);
+			setUserWelcome(`${greeting}`);
 		} else {
-			setUserWelcome(`${greeting} Famille PAC !`);
+			setUserWelcome(`${greeting}`);
 		}
 	}, [currentUser]);
 
@@ -112,10 +120,16 @@ function Home() {
 		};
 	}, []);
 
+	// ! Gestion de la connexion & du loading
 	useEffect(() => {
-		if (currentUser) {
-			loadData();
-		}
+		const checkAuthAndLoadData = async () => {
+			if (currentUser) {
+				await loadData();
+			}
+			setIsLoading(false);
+		};
+
+		checkAuthAndLoadData();
 	}, [currentUser, selectedMonth, selectedYear]);
 
 	useEffect(() => {
@@ -126,16 +140,77 @@ function Home() {
 			epargne !== null &&
 			salaireJacques !== null &&
 			salaireAstrid !== null &&
-			revenuCaf !== null
+			revenuCaf !== null &&
+			budgetCourses !== null &&
+			budgetImprevus !== null &&
+			depenses !== null &&
+			budgetLoisirs !== null &&
+			budgetMaison
 		) {
-			saveData();
+			debouncedSaveData();
 		}
-	}, [prime, compte, epargne, salaireJacques, salaireAstrid, revenuCaf]);
+	}, [
+		prime,
+		compte,
+		epargne,
+		salaireJacques,
+		salaireAstrid,
+		revenuCaf,
+		budgetCourses,
+		budgetImprevus,
+		budgetLoisirs,
+		budgetMaison,
+		depenses,
+	]);
 
 	// ! ***** FUNCTIONS *****
-	// ? Déconnection autimatique après 15 minutes d'inactivité
-	const logoutAfterInactivity = () => {
-		signOut(auth);
+	// ? Déconnection automatique après 15 minutes d'inactivité
+	const logoutAfterInactivity = useCallback(() => {
+		signOut(auth)
+			.then(() => {
+				console.log("Déconnexion automatique après 30 minutes d'inactivité");
+			})
+			.catch((error) => {
+				console.error('Erreur lors de la déconnexion automatique : ', error);
+			});
+	}, []);
+
+	// ? Cpier les dépenses du mois précédent
+	const copyPreviousMonthDepenses = async (currentMonth, currentYear) => {
+		let previousMonth = currentMonth - 1;
+		let previousYear = currentYear;
+
+		if (previousMonth < 0) {
+			previousMonth = 11;
+			previousYear = currentYear - 1;
+		}
+
+		const previousMonthName = months[previousMonth];
+		const previousDocRef = doc(
+			db,
+			'users',
+			currentUser.uid,
+			'years',
+			String(previousYear),
+			'months',
+			previousMonthName
+		);
+
+		try {
+			const previousDocSnap = await getDoc(previousDocRef);
+			if (previousDocSnap.exists()) {
+				const previousData = previousDocSnap.data();
+				return previousData.depenses || [];
+			} else {
+				return [];
+			}
+		} catch (error) {
+			console.error(
+				'Erreur lors de la copie des dépenses du mois précédent : ',
+				error
+			);
+			return [];
+		}
 	};
 
 	const toggleComponent = (component) => {
@@ -143,6 +218,13 @@ function Home() {
 			prevComponent === component ? '' : component
 		);
 	};
+
+	// ? Débouncer saveData
+	const debouncedSaveData = useCallback(
+		debounce(() => {
+			saveData();
+		}, 1000)
+	);
 
 	// ! Sauvegarder les données dans firebase
 	const saveData = async () => {
@@ -160,35 +242,41 @@ function Home() {
 					month
 				),
 				{
-					prime: parseFloat(prime) || 0,
-					compte: parseFloat(compte) || 0,
-					epargne: parseFloat(epargne) || 0,
-					salaireJacques: parseFloat(salaireJacques) || 0,
-					salaireAstrid: parseFloat(salaireAstrid) || 0,
-					revenuCaf: parseFloat(revenuCaf) || 0,
-					courses: courses,
+					prime: parseFloat(prime) || 0.0,
+					compte: parseFloat(compte) || 0.0,
+					epargne: parseFloat(epargne) || 0.0,
+					salaireJacques: parseFloat(salaireJacques) || 0.0,
+					salaireAstrid: parseFloat(salaireAstrid) || 0.0,
+					revenuCaf: parseFloat(revenuCaf) || 0.0,
 					imprevus: imprevus,
+					loisirs: loisirs,
+					maison: maison,
+					courses: courses,
+					budgetCourses: parseFloat(budgetCourses) || 450,
+					budgetImprevus: parseFloat(budgetImprevus) || 100,
+					budgetLoisirs: parseFloat(budgetLoisirs) || 200,
+					budgetMaison: parseFloat(budgetMaison) || 100,
+					depenses: depenses,
 				}
 			);
-			toast.success('Mise à jour ok !', {
-				position: 'top-center',
-				autoClose: 2000,
-				hideProgressBar: false,
-				closeOnClick: true,
-				pauseOnHover: true,
-				draggable: true,
-				progress: undefined,
-				theme: 'dark',
-			});
+			// toast.success('Mise à jour ok !', {
+			// 	position: 'bottom-right',
+			// 	autoClose: 2000,
+			// 	hideProgressBar: false,
+			// 	closeOnClick: true,
+			// 	pauseOnHover: true,
+			// 	draggable: false,
+			// 	progress: undefined,
+			// 	theme: 'dark',
+			// });
 		} catch (error) {
-			console.error('Erreur lors de la sauvegarde des données : ', error);
 			toast.error('Erreur lors de la sauvegarde des données.', {
 				position: 'top-right',
-				autoClose: 5000,
+				autoClose: 8000,
 				hideProgressBar: false,
 				closeOnClick: true,
 				pauseOnHover: true,
-				draggable: true,
+				draggable: false,
 				progress: undefined,
 			});
 		}
@@ -218,8 +306,15 @@ function Home() {
 				setSalaireJacques(data.salaireJacques);
 				setSalaireAstrid(data.salaireAstrid);
 				setRevenuCaf(data.revenuCaf);
-				setCourses(data.courses || []);
 				setImprevus(data.imprevus || []);
+				setLoisirs(data.loisirs || []);
+				setMaison(data.maison || []);
+				setCourses(data.courses || []);
+				setBudgetCourses(data.budgetCourses || 450);
+				setBudgetImprevus(data.budgetImprevus || 100);
+				setBudgetLoisirs(data.budgetLoisirs || 200);
+				setBudgetMaison(data.budgetMaison || 100);
+				setDepenses(data.depenses || []);
 			} else {
 				setPrime(null);
 				setCompte(null);
@@ -227,15 +322,28 @@ function Home() {
 				setSalaireJacques(null);
 				setSalaireAstrid(null);
 				setRevenuCaf(null);
+				setBudgetCourses(450);
+				setBudgetImprevus(100);
+				setBudgetLoisirs(200);
+				setBudgetMaison(100);
 				setCourses([]);
 				setImprevus([]);
+				setLoisirs([]);
+				setMaison([]);
+				const previousDepenses = await copyPreviousMonthDepenses(
+					selectedMonth,
+					selectedYear
+				);
+				setDepenses(
+					previousDepenses.length > 0 ? previousDepenses : depensesList
+				);
 			}
 		} catch (error) {
 			console.error('Erreur lors du chargement des données : ', error);
 		}
 	};
 
-	// ! Sauvegardes temporaires
+	// ! Sauvegardes temporaires : comptes, epargne, salaires, caf ...
 	const handleSavePrime = () => {
 		if (tempPrime) {
 			setPrime(parseFloat(tempPrime) || 0);
@@ -285,38 +393,179 @@ function Home() {
 		}
 	};
 
+	const handleSaveBudgetCourses = () => {
+		if (tempBudgetCourses) {
+			setBudgetCourses(parseFloat(tempBudgetCourses) || 0);
+			setTempBudgetCourses('');
+		} else {
+			return;
+		}
+	};
+
+	const getTotalEntries = () => {
+		return (
+			parseFloat(prime || 0) +
+			parseFloat(salaireJacques || 0) +
+			parseFloat(salaireAstrid || 0) +
+			parseFloat(revenuCaf || 0)
+		);
+	};
+
 	// ! Gestion des imprévus
 	const handleAddImprevus = () => {
 		setImprevus((prevImprevus) => {
-			const nouveauxImprevus = [...prevImprevus, { libelle: '', montant: '' }];
-			return nouveauxImprevus;
+			// Trouver le plus grand identifiant actuel et ajouter 1 pour le nouvel identifiant
+			const newId =
+				prevImprevus.length > 0
+					? Math.max(...prevImprevus.map((imprevu) => imprevu.id)) + 1
+					: 1;
+			const newImprevus = [
+				...prevImprevus,
+				{ id: newId, libelle: '', montant: '' },
+			];
+			return newImprevus;
 		});
 	};
 
-	const handleImprevuChange = (index, key, value) => {
-		const nouvelImprevu = [...imprevus];
-		const ancienMontant = parseFloat(nouvelImprevu[index].montant || 0);
-		nouvelImprevu[index][key] = value;
+	const handleImprevuChange = (id, key, value) => {
+		setImprevus((prevImprevus) => {
+			const nouvelImprevus = prevImprevus.map((imprevu) => {
+				if (imprevu.id === id) {
+					const ancienMontant = parseFloat(imprevu.montant || 0);
+					const updatedImprevu = { ...imprevu, [key]: value };
 
-		if (key === 'montant') {
-			const nouveauMontant = parseFloat(value || 0);
-			const difference = nouveauMontant - ancienMontant;
-			setCompte((prevCompte) => prevCompte - difference);
+					if (key === 'montant') {
+						const nouveauMontant = parseFloat(value || 0);
+						const difference = nouveauMontant - ancienMontant;
+						setCompte((prevCompte) => prevCompte - difference);
+					}
+
+					return updatedImprevu;
+				}
+				return imprevu;
+			});
+
+			return nouvelImprevus;
+		});
+		setTimeout(() => {
+			saveData();
+		}, 500);
+	};
+
+	const handleDeleteImprevu = (id) => {
+		console.log(`L'ID à effacer : ${id}`);
+		setImprevus((prevImprevus) => {
+			const newImprevus = prevImprevus.filter((imprevu) => imprevu.id !== id);
+			const imprevuToRemove = prevImprevus.find((imprevu) => imprevu.id === id);
+			if (imprevuToRemove) {
+				setCompte(
+					(prevCompte) => prevCompte + parseFloat(imprevuToRemove.montant || 0)
+				); // Ajuster le compte
+			}
+			setTimeout(() => {
+				saveData(newImprevus); // Pass the updated imprevus to saveData
+			}, 500); // Utilisation de setTimeout pour donner le temps à l'état de se mettre à jour avant de sauvegarder
+			return newImprevus;
+		});
+	};
+
+	const handleSaveBudgetImprevus = () => {
+		if (tempBudgetImprevus) {
+			setBudgetImprevus(parseFloat(tempBudgetImprevus) || 0);
+			setTempBudgetImprevus('');
+		} else {
+			return;
 		}
-
-		setImprevus(nouvelImprevu);
 	};
 
 	const handleSaveImprevus = () => {
 		saveData();
 	};
 
+	const getTotalImprevus = () => {
+		return imprevus.reduce(
+			(total, imprevu) => total + parseFloat(imprevu.montant || 0),
+			0
+		);
+	};
+
+	// ! Gestion des dépenses
+	const generateNewId = (depenses) => {
+		const ids = depenses.map((depense) => depense.id);
+		return ids.length ? Math.max(...ids) + 1 : 1;
+	};
+
+	const handleAddDepense = () => {
+		setDepenses((prevDepenses) => [
+			...prevDepenses,
+			{
+				id: generateNewId(prevDepenses),
+				libelle: '',
+				montant: 0.0,
+				compte: '',
+				categorie: '',
+				depose: false,
+				paye: false,
+				fixe: false,
+			},
+		]);
+	};
+
+	const handleDeleteDepense = (id) => {
+		setDepenses((prevDepenses) =>
+			prevDepenses.filter((depense) => depense.id !== id)
+		);
+		setTimeout(() => {
+			saveData();
+		}, 500); // Utilisation de setTimeout pour donner le temps à l'état de se mettre à jour avant de sauvegarder
+	};
+
+	const handleDepenseChange = (id, key, value) => {
+		setDepenses((prevDepenses) =>
+			prevDepenses.map((depense) =>
+				depense.id === id ? { ...depense, [key]: value } : depense
+			)
+		);
+		saveData();
+	};
+
+	const handleSaveDepenses = () => {
+		setTimeout(() => {
+			saveData();
+		}, 500); // Utilisation de setTimeout pour donner le temps à l'état de se mettre à jour avant de sauvegarder
+	};
+
+	const getTotalDepenses = () => {
+		return depenses
+			.reduce((total, depense) => total + parseFloat(depense.montant || 0.0), 0)
+			.toFixed(2);
+	};
+
 	// ! Gestion des courses
 	const handleAddCourse = () => {
 		setCourses((prevCourses) => {
-			const newCourses = [...prevCourses, { label: '', amount: '' }];
+			// Trouver le plus grand identifiant actuel et ajouter 1 pour le nouvel identifiant
+			const newId =
+				prevCourses.length > 0
+					? Math.max(...prevCourses.map((course) => course.id)) + 1
+					: 1;
+			const newCourses = [...prevCourses, { id: newId, label: '', amount: '' }];
 			return newCourses;
 		});
+	};
+
+	const handleDeleteCourse = (id) => {
+		setCourses((prevCourses) => {
+			const newCourses = prevCourses.filter((course) => course.id !== id);
+			const courseToRemove = prevCourses.find((course) => course.id === id);
+			if (courseToRemove) {
+				setCompte(
+					(prevCompte) => prevCompte + parseFloat(courseToRemove.amount || 0)
+				); // Ajuster le compte
+			}
+			return newCourses;
+		});
+		saveData();
 	};
 
 	const handleCourseChange = (index, key, value) => {
@@ -343,11 +592,184 @@ function Home() {
 			.toFixed(2);
 	};
 
-	// const getDifferenceCourse = () => {
-	// 	return (budgetCourses - parseFloat(getTotalCourses())).toFixed(2);
-	// };
+	// ! Gestion des loisirs
+	const handleAddLoisirs = () => {
+		setLoisirs((prevLoisirs) => {
+			const newId =
+				prevLoisirs.length > 0
+					? Math.max(...prevLoisirs.map((loisir) => loisir.id)) + 1
+					: 1;
+			const newLoisirs = [
+				...prevLoisirs,
+				{ id: newId, libelle: '', montant: '' },
+			];
+			return newLoisirs;
+		});
+	};
+
+	const handleLoisirChange = (id, key, value) => {
+		setLoisirs((prevLoisirs) => {
+			const nouveauLoisirs = prevLoisirs.map((loisir) => {
+				if (loisir.id === id) {
+					const ancienMontant = parseFloat(loisir.montant || 0);
+					const updatedLoisir = { ...loisir, [key]: value };
+
+					if (key === 'montant') {
+						const nouveauMontant = parseFloat(value || 0);
+						const difference = nouveauMontant - ancienMontant;
+						setCompte((prevCompte) => prevCompte - difference);
+					}
+
+					return updatedLoisir;
+				}
+				return loisir;
+			});
+
+			return nouveauLoisirs;
+		});
+		setTimeout(() => {
+			saveData();
+		}, 500);
+	};
+
+	const handleDeleteLoisir = (id) => {
+		setLoisirs((prevLoisirs) => {
+			const newLoisirs = prevLoisirs.filter((loisir) => loisir.id !== id);
+			const loisirToRemove = prevLoisirs.find((loisir) => loisir.id === id);
+			if (loisirToRemove) {
+				setCompte(
+					(prevCompte) => prevCompte + parseFloat(loisirToRemove.montant || 0)
+				); // Ajuster le compte
+			}
+			setTimeout(() => {
+				saveData(newLoisirs); // Pass the updated loisirs to saveData
+			}, 500); // Utilisation de setTimeout pour donner le temps à l'état de se mettre à jour avant de sauvegarder
+			return newLoisirs;
+		});
+	};
+
+	const handleSaveBudgetLoisirs = () => {
+		if (tempBudgetLoisirs) {
+			setBudgetLoisirs(parseFloat(tempBudgetLoisirs) || 0);
+			setTempBudgetLoisirs('');
+		} else {
+			return;
+		}
+	};
+
+	const handleSaveLoisirs = () => {
+		saveData();
+	};
+
+	const getTotalLoisirs = () => {
+		return loisirs.reduce(
+			(total, loisir) => total + parseFloat(loisir.montant || 0),
+			0
+		);
+	};
+
+	// ! Gestion des dépenses de la maison
+	const handleAddMaison = () => {
+		setMaison((prevMaison) => {
+			const newId =
+				prevMaison.length > 0
+					? Math.max(...prevMaison.map((m) => m.id)) + 1
+					: 1;
+			const newMaison = [
+				...prevMaison,
+				{ id: newId, libelle: '', montant: '' },
+			];
+			return newMaison;
+		});
+	};
+
+	const handleMaisonChange = (id, key, value) => {
+		setMaison((prevMaison) => {
+			const nouveauMaison = prevMaison.map((m) => {
+				if (m.id === id) {
+					const ancienMontant = parseFloat(m.montant || 0);
+					const updatedMaison = { ...m, [key]: value };
+
+					if (key === 'montant') {
+						const nouveauMontant = parseFloat(value || 0);
+						const difference = nouveauMontant - ancienMontant;
+						setCompte((prevCompte) => prevCompte - difference);
+					}
+
+					return updatedMaison;
+				}
+				return maison;
+			});
+
+			return nouveauMaison;
+		});
+		setTimeout(() => {
+			saveData();
+		}, 500);
+	};
+
+	const handleDeleteMaison = (id) => {
+		setMaison((prevMaison) => {
+			const newMaison = prevMaison.filter((m) => m.id !== id);
+			const maisonToRemove = prevMaison.find((m) => m.id === id);
+			if (maisonToRemove) {
+				setCompte(
+					(prevCompte) => prevCompte + parseFloat(maisonToRemove.montant || 0)
+				); // Ajuster le compte
+			}
+			setTimeout(() => {
+				saveData(newMaison); // Pass the updated loisirs to saveData
+			}, 500); // Utilisation de setTimeout pour donner le temps à l'état de se mettre à jour avant de sauvegarder
+			return newMaison;
+		});
+	};
+
+	const handleSaveBudgetMaison = () => {
+		if (tempBudgetMaison) {
+			setBudgetMaison(parseFloat(tempBudgetMaison) || 0);
+			setTempBudgetMaison('');
+		} else {
+			return;
+		}
+	};
+
+	const handleSaveMaison = () => {
+		saveData();
+	};
+
+	const getTotalMaison = () => {
+		return maison.reduce((total, m) => total + parseFloat(m.montant || 0), 0);
+	};
+
+	// ! Calculer le reste d'argent
+	const getReste = () => {
+		const totalEntries = getTotalEntries();
+		const totalDepenses = getTotalDepenses();
+		const totalImprevus = getTotalImprevus();
+		const totalCourses = getTotalCourses();
+
+		const resteTotal =
+			totalEntries -
+			totalDepenses -
+			totalImprevus -
+			budgetCourses -
+			totalCourses;
+
+		return resteTotal.toFixed(2);
+	};
+
+	// ! ***** VARIABLES *****
+	const reste = getReste();
 
 	// ! ***** RETURN *****
+	if (isLoading) {
+		console.log('LOADING...');
+		return (
+			<div className='flex justify-center items-center min-h-screen'>
+				<p className='text-white text-2xl'>Chargement...</p>
+			</div>
+		);
+	}
 	return (
 		<div className='w-full min-h-screen flex flex-col bg-slate-900 p-4'>
 			<ToastContainer
@@ -364,7 +786,7 @@ function Home() {
 			/>
 
 			{/* TITRE & LOGOUT */}
-			<Header userWelcome={userWelcome} />
+			<Header userWelcome={userWelcome} currentUser={currentUser} />
 
 			{/* MOIS & ANNÉES */}
 			<Navbar
@@ -390,12 +812,22 @@ function Home() {
 				tempEpargne={tempEpargne}
 				setTempEpargne={setTempEpargne}
 				handleSaveEpargne={handleSaveEpargne}
+				reste={reste}
+				getTotalEntries={getTotalEntries}
+				getTotalDepenses={getTotalDepenses}
+				getTotalImprevus={getTotalImprevus}
+				getTotalCourses={getTotalCourses}
+				budgetCourses={budgetCourses}
 			/>
 
 			{/* Barre de navigation pour les composants */}
-			<ComponentNavbar toggleComponent={toggleComponent} />
+			<ComponentNavbar
+				activeComponent={activeComponent}
+				toggleComponent={toggleComponent}
+			/>
 
-			{/* Affichage des composants en fonction de l'état */}
+			{/* ----- Affichage des composants en fonction de l'état ----- */}
+
 			{/* ***** ENTRÉES ***** */}
 			{activeComponent === 'entries' && (
 				<Entries
@@ -415,15 +847,31 @@ function Home() {
 				/>
 			)}
 
+			{/* ***** DÉPENSES ***** */}
+			{activeComponent === 'depenses' && (
+				<Depenses
+					depenses={depenses}
+					handleDepenseChange={handleDepenseChange}
+					handleSaveDepenses={handleSaveDepenses}
+					handleDeleteDepense={handleDeleteDepense}
+					handleAddDepense={handleAddDepense}
+					getTotalDepenses={getTotalDepenses}
+				/>
+			)}
+
 			{/* ***** COURSES ***** */}
 			{activeComponent === 'courses' && (
 				<Courses
 					budgetCourses={budgetCourses}
+					tempBudgetCourses={tempBudgetCourses}
+					setTempBudgetCourses={setTempBudgetCourses}
+					handleSaveBudgetCourses={handleSaveBudgetCourses}
 					getTotalCourses={getTotalCourses}
 					handleAddCourse={handleAddCourse}
 					courses={courses}
 					handleCourseChange={handleCourseChange}
 					handleSaveCourses={handleSaveCourses}
+					handleDeleteCourse={handleDeleteCourse}
 				/>
 			)}
 
@@ -434,12 +882,50 @@ function Home() {
 					handleAddImprevus={handleAddImprevus}
 					handleImprevuChange={handleImprevuChange}
 					handleSaveImprevus={handleSaveImprevus}
+					budgetImprevus={budgetImprevus}
+					tempBudgetImprevus={tempBudgetImprevus}
+					setTempBudgetImprevus={setTempBudgetImprevus}
+					handleSaveBudgetImprevus={handleSaveBudgetImprevus}
+					getTotalImprevus={getTotalImprevus}
+					handleDeleteImprevu={handleDeleteImprevu}
+				/>
+			)}
+
+			{/* ***** LOISIRS ***** */}
+			{activeComponent === 'loisirs' && (
+				<Loisirs
+					loisirs={loisirs}
+					handleAddLoisirs={handleAddLoisirs}
+					handleLoisirChange={handleLoisirChange}
+					handleSaveLoisirs={handleSaveLoisirs}
+					budgetLoisirs={budgetLoisirs}
+					tempBudgetLoisirs={tempBudgetLoisirs}
+					setTempBudgetLoisirs={setTempBudgetLoisirs}
+					handleSaveBudgetLoisirs={handleSaveBudgetLoisirs}
+					getTotalLoisirs={getTotalLoisirs}
+					handleDeleteLoisir={handleDeleteLoisir}
+				/>
+			)}
+
+			{/* ***** LOISIRS ***** */}
+			{activeComponent === 'maison' && (
+				<Maison
+					maison={maison}
+					handleAddMaison={handleAddMaison}
+					handleMaisonChange={handleMaisonChange}
+					handleSaveMaison={handleSaveMaison}
+					budgetMaison={budgetMaison}
+					tempBudgetMaison={tempBudgetMaison}
+					setTempBudgetMaison={setTempBudgetMaison}
+					handleSaveBudgetMaison={handleSaveBudgetMaison}
+					getTotalMaison={getTotalMaison}
+					handleDeleteMaison={handleDeleteMaison}
 				/>
 			)}
 
 			{/* *** FOOTER *** */}
 			<footer className='text-center text-gray-300 sticky top-full mt-8'>
-				<p>Family bank application - © {currentYear}</p>
+				<p>Family Budget - © {currentYear}</p>
 			</footer>
 			{showNotification && (
 				<Notification

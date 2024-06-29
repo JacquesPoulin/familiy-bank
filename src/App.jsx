@@ -9,7 +9,7 @@ function App() {
 	const { currentUser } = useAuth();
 
 	return (
-		<div className='min-h-screen flex flex-col justify-center items-center bg-slate-900'>
+		<div className='min-h-screen flex flex-col justify-center items-center bg-slate-900 overflow-hidden'>
 			{currentUser ? (
 				<Home />
 			) : (

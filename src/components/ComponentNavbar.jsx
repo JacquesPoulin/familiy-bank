@@ -1,24 +1,22 @@
-// components/Header.jsx
-import React from 'react';
+// ! COMPOSANT 	PERMETTANT DE GÉRER LA NAVBAR INTERMEDIARE
 
-const ComponentNavbar = ({ toggleComponent }) => {
+// ! -- Imports --
+import componentList from '../data/componentList';
+
+const ComponentNavbar = ({ activeComponent, toggleComponent }) => {
 	return (
 		<div className='w-full mt-8 p-4 flex justify-center items-center gap-8'>
-			<button
-				className='text-white text-2xl hover:text-yellow-500 active:text-yellow-500 focus:outline-none'
-				onClick={() => toggleComponent('entries')}>
-				Entrées
-			</button>
-			<button
-				className='text-white text-2xl hover:text-yellow-500 active:text-yellow-500 focus:outline-none'
-				onClick={() => toggleComponent('courses')}>
-				Courses
-			</button>
-			<button
-				className='text-white text-2xl hover:text-yellow-500 active:text-yellow-500 focus:outline-none'
-				onClick={() => toggleComponent('imprevus')}>
-				Imprévus
-			</button>
+			{componentList.map(({ id, nom, title, tag }) => (
+				<button
+					key={id}
+					className={`text-white ${
+						activeComponent === `${tag}` ? 'text-yellow-500' : ''
+					} text-2xl tracking-widest hover:text-yellow-200`}
+					title={title}
+					onClick={() => toggleComponent(`${tag}`)}>
+					{nom}
+				</button>
+			))}
 		</div>
 	);
 };

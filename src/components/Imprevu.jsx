@@ -1,44 +1,91 @@
-// components/Imprévu.jsx
-import React from 'react';
+// ! Composant qui gère les imprévus
+
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faTrash } from '@fortawesome/free-solid-svg-icons';
 
 const Imprevu = ({
 	imprevus,
 	handleAddImprevus,
 	handleImprevuChange,
-	handleSaveImprevus,
+	handleDeleteImprevu,
+	budgetImprevus,
+	tempBudgetImprevus,
+	setTempBudgetImprevus,
+	handleSaveBudgetImprevus,
+	getTotalImprevus,
 }) => {
+	// ! ** VARIABLES **
+
+	const totalImprevus = getTotalImprevus();
+	const resteImprevus =
+		parseFloat(budgetImprevus) - parseFloat(totalImprevus).toFixed(2);
+
 	return (
-		<section className='w-auto bg-slate-800 p-6 rounded-lg shadow-md max-w-6xl mx-auto mt-10'>
-			<h2 className='text-2xl text-slate-50 font-bold text-center mb-5 tracking-wide'>
-				IMPRÉVUS
-			</h2>
-
-			<div className='flex flex-col items-center mb-5'>
-				<div className='text-slate-50 flex justify-center items-center gap-4 mb-4'>
-					<p>Tout ce que l'on a pas planifié</p>
+		<section className='w-full bg-slate-800 p-6 rounded-lg shadow-md max-w-6xl mx-auto mt-10'>
+			<div className='flex flex-wrap justify-between items-center gap-44 mb-10'>
+				<div className='flex justify-center items-center gap-4'>
+					<input
+						type='number'
+						value={tempBudgetImprevus}
+						onChange={(e) => setTempBudgetImprevus(e.target.value)}
+						className='w-44 p-2 rounded bg-gray-700 text-white'
+						placeholder='Modifier le budget'
+					/>
+					<button
+						type='button'
+						className='w-auto text-lg text-center bg-blue-500 px-4 py-1 rounded text-slate-50 hover:bg-blue-600 tracking-wide'
+						onClick={handleSaveBudgetImprevus}
+						title='Valider le budget du mois'>
+						Valider
+					</button>
 				</div>
-
+				<h2 className='text-2xl text-cyan-600 font-bold text-center tracking-widest'>
+					IMPRÉVUS
+					<p className='mt-2 text-sm italic font-light text-yellow-500'>
+						Dépenses imprévues & ponctuelles
+					</p>
+				</h2>
 				<button
 					type='button'
-					className='w-auto flex justify-center items-center gap-4 h-10 mt-2 mb-4 text-lg text-center bg-green-700 p-4 rounded text-slate-50 hover:bg-green-600'
-					title='Ajouter une dépense imprévue'
-					onClick={handleAddImprevus}>
-					<span>Ajouter</span>
-					<FontAwesomeIcon icon={faPlus} />
+					className='w-auto h-10 flex flex-center items-center gap-2 text-lg text-center bg-green-700 p-2 rounded text-slate-50 hover:bg-green-600'
+					onClick={handleAddImprevus}
+					title='Ajouter un nouvel impévu'>
+					Ajouter un imprévu
 				</button>
+			</div>
 
-				{imprevus.map((imprevu, index) => (
-					<div key={index} className='flex justify-center items-center mb-2'>
+			<div className='flex flex-col items-center mb-5'>
+				<div className='flex justify-center items-center gap-20 mb-8'>
+					<label className='text-slate-50 text-lg'>
+						Budget imprévus : {parseFloat(budgetImprevus).toFixed(2)} €
+					</label>
+					<label className='text-slate-50 text-lg tracking-wide'>
+						Dépenses en cours : {totalImprevus} €
+					</label>
+					{resteImprevus > 0 && (
+						<label className='text-green-600 text-xl animate-pulse'>
+							Reste : {resteImprevus} €
+						</label>
+					)}
+					{resteImprevus < 0 && (
+						<label className='text-red-500 text-xl animate-pulse'>
+							Dépassement : {resteImprevus} €
+						</label>
+					)}
+				</div>
+
+				{imprevus.map((imprevu) => (
+					<div
+						key={imprevu.id}
+						className='flex justify-center items-center gap-5 mb-2'>
 						<input
 							type='text'
 							placeholder='Libellé'
 							value={imprevu.libelle}
 							onChange={(e) =>
-								handleImprevuChange(index, 'libelle', e.target.value)
+								handleImprevuChange(imprevu.id, 'libelle', e.target.value)
 							}
-							className='w-auto p-2 rounded bg-gray-700 text-white mr-2'
+							className='w-72 p-2 rounded bg-gray-700 text-slate-50 mr-2 text-center'
 						/>
 
 						<input
@@ -46,21 +93,19 @@ const Imprevu = ({
 							placeholder='Montant'
 							value={imprevu.montant}
 							onChange={(e) =>
-								handleImprevuChange(index, 'montant', e.target.value)
+								handleImprevuChange(imprevu.id, 'montant', e.target.value)
 							}
-							className='w-auto p-2 rounded bg-gray-700 text-white'
+							className='max-w-40 p-2 rounded bg-gray-700 text-slate-50 text-center'
 						/>
+						<button
+							type='button'
+							className='w-10 h-10 ml-5 text-lg text-center bg-red-500 p-2 rounded text-slate-50 hover:bg-red-600'
+							title="Supprimer l'imprévu"
+							onClick={() => handleDeleteImprevu(imprevu.id)}>
+							<FontAwesomeIcon icon={faTrash} />
+						</button>
 					</div>
 				))}
-
-				{/* <button
-					type='button'
-					className='w-40 mt-4 text-lg text-center bg-blue-500 p-2 rounded text-slate-50 hover:bg-blue-600'
-					title='Valider les imprévus'
-					onClick={handleSaveImprevus}>
-					<FontAwesomeIcon icon={faCheck} className='mr-2' />
-					Valider
-				</button> */}
 			</div>
 		</section>
 	);
