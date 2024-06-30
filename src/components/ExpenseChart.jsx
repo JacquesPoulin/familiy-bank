@@ -35,7 +35,7 @@ const ExpenseChart = ({
 }) => {
 	const data = {
 		labels: [
-			'Dépenses',
+			'Dépenses (fixes)',
 			'Imprévus',
 			'Loisirs',
 			'Courses',
@@ -104,11 +104,11 @@ const ExpenseChart = ({
 
 	return (
 		<div className='flex flex-col justify-center items-center mb-14'>
-			<h2 className='mt-20 mb-4 text-3xl tracking-wider text-blue-400'>
-				<FontAwesomeIcon icon={faChartSimple} className='mr-4' />
+			<h2 className='mt-20 mb-4 text-3xl tracking-wider text-slate-50'>
+				<FontAwesomeIcon icon={faChartLine} className='mr-4' />
 				GRAPHIQUE
 			</h2>
-			<Bar data={data} options={options} />
+			<Bar data={data} options={options} className='tracking-wide'/>
 		</div>
 	);
 };
