@@ -197,7 +197,7 @@ function Home() {
 			});
 	}, []);
 
-	// ? Cpier les dépenses du mois précédent
+	// ? Copier les dépenses du mois précédent
 	const copyPreviousMonthDepenses = async (currentMonth, currentYear) => {
 		let previousMonth = currentMonth - 1;
 		let previousYear = currentYear;
@@ -333,7 +333,7 @@ function Home() {
 				setImprevus(data.imprevus || []);
 				setLoisirs(data.loisirs || []);
 				setMaison(data.maison || []);
-				setShopping(data.maison || []);
+				setShopping(data.shopping || []);
 				setCourses(data.courses || []);
 				setBudgetCourses(data.budgetCourses || 450);
 				setBudgetImprevus(data.budgetImprevus || 100);
@@ -341,15 +341,12 @@ function Home() {
 				setBudgetMaison(data.budgetMaison || 100);
 				setBudgetShopping(data.budgetShopping || 100);
 				setDepenses(data.depenses || []);
-
-				// ? Mettre à jour les comptes des mois futurs
-				if (
-					selectedMonth === new Date().getMonth() &&
-					selectedYear === new Date().getFullYear()
-				) {
-					updateFutureMonthsAccounts(selectedMonth, selectedYear, data.compte);
-				}
 			} else {
+				// Initialiser les données pour le mois courant sans écraser les futures mises à jour
+				const previousDepenses = await copyPreviousMonthDepenses(
+					selectedMonth,
+					selectedYear
+				);
 				setPrime(null);
 				setCompte(null);
 				setEpargne(null);
@@ -365,10 +362,6 @@ function Home() {
 				setImprevus([]);
 				setLoisirs([]);
 				setShopping([]);
-				const previousDepenses = await copyPreviousMonthDepenses(
-					selectedMonth,
-					selectedYear
-				);
 				setDepenses(
 					previousDepenses.length > 0 ? previousDepenses : depensesList
 				);
@@ -384,7 +377,8 @@ function Home() {
 		currentYear,
 		newAccountValue
 	) => {
-		months.slice(currentMonthIndex + 1).forEach(async (month) => {
+		for (let i = currentMonthIndex + 1; i < months.length; i++) {
+			const month = months[i];
 			const docRef = doc(
 				db,
 				'users',
@@ -408,7 +402,7 @@ function Home() {
 					error
 				);
 			}
-		});
+		}
 	};
 
 	// ! Sauvegardes temporaires : comptes, epargne, salaires, caf ...
