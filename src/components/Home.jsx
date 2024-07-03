@@ -551,6 +551,7 @@ function Home() {
 		const ids = depenses.map((depense) => depense.id);
 		return ids.length ? Math.max(...ids) + 1 : 1;
 	};
+
 	const handleAddDepense = () => {
 		setDepenses((prevDepenses) => [
 			...prevDepenses,
@@ -574,14 +575,36 @@ function Home() {
 			saveData();
 		}, 500); // Utilisation de setTimeout pour donner le temps à l'état de se mettre à jour avant de sauvegarder
 	};
-	const handleDepenseChange = (id, key, value) => {
+
+	const handleDepenseChange = (id, key, value, depense) => {
 		setDepenses((prevDepenses) =>
-			prevDepenses.map((depense) =>
-				depense.id === id ? { ...depense, [key]: value } : depense
-			)
+			prevDepenses.map((dep) => {
+				if (dep.id === id) {
+					const updatedDep = { ...dep, [key]: value };
+
+					if (key === 'paye' && dep.compte === 'Revolut') {
+						const montant = parseFloat(dep.montant || 0);
+						if (value) {
+							// Si la dépense est marquée comme payée
+							updateCompte(-montant);
+						} else {
+							// Si la dépense est décochée comme non payée
+							updateCompte(montant);
+						}
+					}
+
+					return updatedDep;
+				}
+				return dep;
+			})
 		);
 		saveData();
 	};
+
+	const updateCompte = (montant) => {
+		setCompte((prevCompte) => parseFloat(prevCompte || 0) + montant);
+	};
+
 	const handleSaveDepenses = () => {
 		setTimeout(() => {
 			saveData();
@@ -975,6 +998,7 @@ function Home() {
 					handleDeleteDepense={handleDeleteDepense}
 					handleAddDepense={handleAddDepense}
 					getTotalDepenses={getTotalDepenses}
+					updateCompte={updateCompte}
 				/>
 			)}
 

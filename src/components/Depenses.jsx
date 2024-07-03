@@ -1,5 +1,3 @@
-// ! Gestion du composant DEPENSES
-
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck } from '@fortawesome/free-solid-svg-icons';
 
@@ -10,6 +8,7 @@ const Depenses = ({
 	handleDeleteDepense,
 	handleAddDepense,
 	getTotalDepenses,
+	updateCompte,
 }) => {
 	// ! *** FONCTIONS ***
 	// ?  Calculer le total des dépense par comptes
@@ -138,7 +137,12 @@ const Depenses = ({
 									type='checkbox'
 									checked={depense.paye}
 									onChange={(e) =>
-										handleDepenseChange(depense.id, 'paye', e.target.checked)
+										handleDepenseChange(
+											depense.id,
+											'paye',
+											e.target.checked,
+											depense
+										)
 									}
 								/>
 							</td>
@@ -158,11 +162,11 @@ const Depenses = ({
 			</table>
 			<div className='flex justify-center items-center mt-8 mb-4'>
 				{/* <button
-					type='button'
-					className='w-auto text-lg text-center bg-blue-500 p-2 rounded text-slate-50 hover:bg-blue-600'
-					onClick={handleSaveDepenses}>
-					Enregistrer
-				</button> */}
+                    type='button'
+                    className='w-auto text-lg text-center bg-blue-500 p-2 rounded text-slate-50 hover:bg-blue-600'
+                    onClick={handleSaveDepenses}>
+                    Enregistrer
+                </button> */}
 				<button
 					type='button'
 					className='w-auto text-lg text-center bg-green-700 p-2 rounded text-slate-50 hover:bg-green-600 ml-4'
