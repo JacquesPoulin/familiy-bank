@@ -234,7 +234,6 @@ function Home() {
 			return [];
 		}
 	};
-
 	const toggleComponent = (component) => {
 		setActiveComponent((prevComponent) =>
 			prevComponent === component ? '' : component
@@ -307,75 +306,82 @@ function Home() {
 	};
 
 	// ! Récupérer les données dans firebase
-	const loadData = async () => {
-		if (!currentUser) return;
-		const month = months[selectedMonth];
-		const docRef = doc(
-			db,
-			'users',
-			currentUser.uid,
-			'years',
-			String(selectedYear),
-			'months',
-			month
-		);
-		try {
-			const docSnap = await getDoc(docRef);
+const loadData = async () => {
+	if (!currentUser) return;
+	const month = months[selectedMonth];
+	const docRef = doc(
+		db,
+		'users',
+		currentUser.uid,
+		'years',
+		String(selectedYear),
+		'months',
+		month
+	);
+	try {
+		const docSnap = await getDoc(docRef);
 
-			if (docSnap.exists()) {
-				const data = docSnap.data();
-				setPrime(data.prime);
-				setCompte(data.compte);
-				setEpargne(data.epargne);
-				setSalaireJacques(data.salaireJacques);
-				setSalaireAstrid(data.salaireAstrid);
-				setRevenuCaf(data.revenuCaf);
-				setImprevus(data.imprevus || []);
-				setLoisirs(data.loisirs || []);
-				setMaison(data.maison || []);
-				setShopping(data.shopping || []);
-				setCourses(data.courses || []);
-				setBudgetCourses(data.budgetCourses || 450);
-				setBudgetImprevus(data.budgetImprevus || 100);
-				setBudgetLoisirs(data.budgetLoisirs || 200);
-				setBudgetMaison(data.budgetMaison || 100);
-				setBudgetShopping(data.budgetShopping || 100);
-				setDepenses(data.depenses || []);
-			} else {
-				// Initialiser les données pour le mois courant sans écraser les futures mises à jour
-				const previousDepenses = await copyPreviousMonthDepenses(
-					selectedMonth,
-					selectedYear
-				);
-				setPrime(null);
-				setCompte(null);
-				setEpargne(null);
-				setSalaireJacques(null);
-				setSalaireAstrid(null);
-				setRevenuCaf(null);
-				setBudgetCourses(450);
-				setBudgetImprevus(100);
-				setBudgetLoisirs(200);
-				setBudgetMaison(100);
-				setBudgetShopping(100);
-				setCourses([]);
-				setImprevus([]);
-				setLoisirs([]);
-				setShopping([]);
-				setDepenses(
-					previousDepenses.length > 0 ? previousDepenses : depensesList
-				);
-			}
-		} catch (error) {
-			console.error('Erreur lors du chargement des données : ', error);
+		if (docSnap.exists()) {
+			const data = docSnap.data();
+			setPrime(data.prime);
+			setCompte(data.compte);
+			setEpargne(data.epargne);
+			setSalaireJacques(data.salaireJacques);
+			setSalaireAstrid(data.salaireAstrid);
+			setRevenuCaf(data.revenuCaf);
+			setImprevus(data.imprevus || []);
+			setLoisirs(data.loisirs || []);
+			setMaison(data.maison || []);
+			setShopping(data.shopping || []);
+			setCourses(data.courses || []);
+			setBudgetCourses(data.budgetCourses || 450);
+			setBudgetImprevus(data.budgetImprevus || 100);
+			setBudgetLoisirs(data.budgetLoisirs || 200);
+			setBudgetMaison(data.budgetMaison || 100);
+			setBudgetShopping(data.budgetShopping || 100);
+			setDepenses(data.depenses || []);
+		} else {
+			// Initialiser les données pour le mois courant sans écraser les futures mises à jour
+			const previousDepenses = await copyPreviousMonthDepenses(
+				selectedMonth,
+				selectedYear
+			);
+			setPrime(null);
+			setCompte(null);
+			setEpargne(null);
+			setSalaireJacques(null);
+			setSalaireAstrid(null);
+			setRevenuCaf(null);
+			setBudgetCourses(450);
+			setBudgetImprevus(100);
+			setBudgetLoisirs(200);
+			setBudgetMaison(100);
+			setBudgetShopping(100);
+			setCourses([]);
+			setImprevus([]);
+			setLoisirs([]);
+			setShopping([]);
+			setDepenses(
+				previousDepenses.length > 0 ? previousDepenses : depensesList
+			);
+
+			// Copier les dépenses aux mois suivants
+			await updateFutureMonthsDepenses(
+				selectedMonth,
+				selectedYear,
+				previousDepenses.length > 0 ? previousDepenses : depensesList
+			);
 		}
-	};
+	} catch (error) {
+		console.error('Erreur lors du chargement des données : ', error);
+	}
+};
 
-	// ! Gérer le montant du compte (en fonction du mois en cours)
-	const updateFutureMonthsAccounts = async (
+	// ! Copier les dépenses aux mois suivants
+	const updateFutureMonthsDepenses = async (
 		currentMonthIndex,
 		currentYear,
-		newAccountValue
+		depenses
 	) => {
 		for (let i = currentMonthIndex + 1; i < months.length; i++) {
 			const month = months[i];
@@ -391,14 +397,74 @@ function Home() {
 
 			try {
 				const docSnap = await getDoc(docRef);
-				if (docSnap.exists()) {
-					await setDoc(docRef, { compte: newAccountValue }, { merge: true });
-				} else {
-					await setDoc(docRef, { compte: newAccountValue });
+				if (!docSnap.exists()) {
+					await setDoc(docRef, {
+						depenses: depenses,
+					});
 				}
 			} catch (error) {
 				console.error(
-					'Erreur lors de la mise à jour des comptes des mois suivants : ',
+					'Erreur lors de la copie des dépenses aux mois suivants : ',
+					error
+				);
+			}
+		}
+	};
+
+	// ! Gérer le montant du compte et les dépenses (en fonction du mois en cours)
+	const updateFutureMonthsAccounts = async (
+		currentMonthIndex,
+		currentYear,
+		newAccountValue
+	) => {
+		const currentMonthName = months[currentMonthIndex];
+		const currentMonthDocRef = doc(
+			db,
+			'users',
+			currentUser.uid,
+			'years',
+			String(currentYear),
+			'months',
+			currentMonthName
+		);
+
+		let currentMonthData = {};
+		try {
+			const currentMonthDocSnap = await getDoc(currentMonthDocRef);
+			if (currentMonthDocSnap.exists()) {
+				currentMonthData = currentMonthDocSnap.data();
+			}
+		} catch (error) {
+			console.error(
+				'Erreur lors de la récupération des données du mois courant : ',
+				error
+			);
+		}
+
+		for (let i = currentMonthIndex + 1; i < months.length; i++) {
+			const month = months[i];
+			const docRef = doc(
+				db,
+				'users',
+				currentUser.uid,
+				'years',
+				String(currentYear),
+				'months',
+				month
+			);
+
+			try {
+				const docSnap = await getDoc(docRef);
+				if (!docSnap.exists()) {
+					await setDoc(docRef, {
+						...currentMonthData,
+						compte: newAccountValue,
+						depenses: currentMonthData.depenses || depensesList,
+					});
+				}
+			} catch (error) {
+				console.error(
+					'Erreur lors de la mise à jour des comptes et des dépenses des mois suivants : ',
 					error
 				);
 			}
@@ -571,9 +637,11 @@ function Home() {
 		setDepenses((prevDepenses) =>
 			prevDepenses.filter((depense) => depense.id !== id)
 		);
-		setTimeout(() => {
-			saveData();
-		}, 500); // Utilisation de setTimeout pour donner le temps à l'état de se mettre à jour avant de sauvegarder
+		// Sauvegarder les données après un délai
+		setTimeout(async () => {
+			await saveData();
+			await updateFutureMonthsAccounts(selectedMonth, selectedYear, compte);
+		}, 500);
 	};
 
 	const handleDepenseChange = (id, key, value, depense) => {
@@ -598,7 +666,11 @@ function Home() {
 				return dep;
 			})
 		);
-		saveData();
+		// Sauvegarder les données après un délai
+		setTimeout(async () => {
+			await saveData();
+			await updateFutureMonthsAccounts(selectedMonth, selectedYear, compte);
+		}, 500);
 	};
 
 	const updateCompte = (montant) => {
